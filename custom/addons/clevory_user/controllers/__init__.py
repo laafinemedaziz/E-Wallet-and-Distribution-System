@@ -1,0 +1,1 @@
+from . import clevory_register_controller

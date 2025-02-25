@@ -1,0 +1,17 @@
+<odoo>
+    <data noupdate="1">
+        <!-- Define the Email Template for User Validation -->
+        <record id="email_template_user_validation" model="mail.template">
+            <field name="name">User Validation Email</field>
+            <field name="model_id" ref="model_res_users"/>
+            <field name="subject">Please Validate Your Account</field>
+            <field name="email_from">clevorytraining@example.com</field>  <!-- Replace with your valid email -->
+            <field name="email_to">${context.get('email')}</field> 
+            <field name="body_html"><![CDATA[
+                <p>Hello, ${context.get('name')}!</p>
+                <p>Please click the following link to validate your account:</p>
+                <p><a href="${context.get('validation_url')}">Click here to validate</a></p>
+            ]]></field>
+        </record>
+    </data>
+</odoo>

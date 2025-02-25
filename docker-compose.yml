@@ -1,0 +1,35 @@
+version: '3.7'
+
+services:
+  odoo_app:
+    image: odoo:18
+    container_name: odoo_app
+    ports:
+      - "8069:8069"
+      - "8071-8072:8071-8072"
+    environment:
+      - HOST=odoo_db
+      - USER=odoo
+      - PASSWORD=odoo
+      - DB_NAME=odoo
+      - DB_PORT=5432
+    volumes:
+      - ./custom/addons:/mnt/extra-addons
+    depends_on:
+      - odoo_db
+    restart: always
+
+  odoo_db:
+    image: postgres:17
+    container_name: odoo_db
+    environment:
+      - POSTGRES_DB=odoo
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo
+    volumes:
+      - odoo_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  odoo_db_data:
