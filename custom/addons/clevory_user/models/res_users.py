@@ -7,6 +7,9 @@ from odoo.exceptions import ValidationError
 
 
 
+_logger = logging.getLogger(__name__)
+
+
 
 class ClevoryUser (models.Model):
     _inherit = 'res.users'
@@ -21,6 +24,8 @@ class ClevoryUser (models.Model):
         ('valid', 'Valid')],
         default='invalid')
     
+    company_id = fields.Many2one('res.company', string='Company', required=False)
+
     company_ref = fields.Many2one('res.partner',String="Company",domain="[('is_company', '=', True)]")
 
     
@@ -64,20 +69,16 @@ class ClevoryUser (models.Model):
         
         vals['verification_token'] = token
 
-        user= self.env['res.users'].with_user(SUPERUSER_ID).create(vals)
+        user= self.env['res.users'].sudo().create(vals)
 
         #Asigning the user to the company if they are of type HR
         if user.type == 'hr':
-            company.write({'he_ref':user.id})
+            company.write({'hr_ref':user.id})
 
         #self._send_validation_email(user.id)
 
         return(user)
     
-    #Bypass sending default email
-    def _action_reset_password(self,signup_type):
-        pass
-
     def _send_validation_email(self,user_id):
         user = self.browse(user_id)
         if not user.exists() :
@@ -114,13 +115,11 @@ class ClevoryUser (models.Model):
     #Contrainst for the company_ref field 
     @api.constrains('type', 'company_ref')
     def _check_company_relationship(self):
-        for user in self:
-            if user.type == 'company' and user.company_ref:
-                raise ValidationError("A company cannot be assigned another company.")
-            elif user.type == 'employee' :
+        for user in self:     
+            if user.type == 'employee' :
                 if not user.company_ref:
                     raise ValidationError("An employee must be linked to a company.")
-                elif user.company_ref.type != "company":
-                    raise ValidationError("The company does not exist")
+                elif user.company_ref.is_company != True:
+                    raise ValidationError("Invald company")
             elif user.type == 'learner' and user.company_ref:
                 raise ValidationError("A learner should not be linked to a company.")
