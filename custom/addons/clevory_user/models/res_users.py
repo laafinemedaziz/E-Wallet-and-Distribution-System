@@ -69,29 +69,32 @@ class ClevoryUser (models.Model):
         
         vals['verification_token'] = token
 
-        user= self.env['res.users'].sudo().create(vals)
+        user= self.env['res.users'].with_user(SUPERUSER_ID).create(vals)
 
         #Asigning the user to the company if they are of type HR
         if user.type == 'hr':
             company.write({'hr_ref':user.id})
 
         #self._send_validation_email(user.id)
-
+        
+        if not user :
+            raise ValidationError("User creation failed")
         return(user)
     
     def _send_validation_email(self,user_id):
         user = self.browse(user_id)
         if not user.exists() :
             raise ValueError("User not found")
-        if user.status != 'invalid':
-            raise ValueError("User status is not 'invalid'")
+
+        if user.status == 'valid':
+            raise ValueError("User status is already valid")
 
         if not user.verification_token:
             raise ValueError("User has no verification token")
         
         validation_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/auth_signup/confirm?token=' + user.verification_token
         template = self.env.ref('clevory_user.email_template_user_validation')
-        template.with_context(validation_url=validation_url, name=user.name, email=user.email).send_mail(user.id, force_send=True)
+        template.with_user(SUPERUSER_ID).with_context(validation_url=validation_url, name=user.name, email=user.email).send_mail(user.id, force_send=True)
 
     def _validate_user(self,token):
 

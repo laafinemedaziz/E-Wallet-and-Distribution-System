@@ -19,6 +19,6 @@ class Partner(models.Model):
         
         vals['is_company'] =  True
 
-        company = self.env['res.partner'].sudo().create(vals)
+        company = self.env['res.partner'].with_user(SUPERUSER_ID).create(vals)
         return company
         
