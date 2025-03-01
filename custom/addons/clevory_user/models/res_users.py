@@ -75,39 +75,41 @@ class ClevoryUser (models.Model):
         if user.type == 'hr':
             company.write({'hr_ref':user.id})
 
-        #self._send_validation_email(user.id)
+        user._send_validation_email()
         
         if not user :
             raise ValidationError("User creation failed")
         return(user)
     
-    def _send_validation_email(self,user_id):
-        user = self.browse(user_id)
-        if not user.exists() :
+    def _send_validation_email(self):
+
+        if not self.exists() :
             raise ValueError("User not found")
+        if self.status != 'invalid':
+            raise ValueError("User status is not 'invalid'")
 
-        if user.status == 'valid':
-            raise ValueError("User status is already valid")
-
-        if not user.verification_token:
+        if not self.verification_token:
             raise ValueError("User has no verification token")
         
-        validation_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/auth_signup/confirm?token=' + user.verification_token
-        template = self.env.ref('clevory_user.email_template_user_validation')
-        template.with_user(SUPERUSER_ID).with_context(validation_url=validation_url, name=user.name, email=user.email).send_mail(user.id, force_send=True)
+        template = self.env.ref('clevory_user.user_registration_learner_mail_template')
+        template.send_mail(self.id, force_send=True)
 
+    def _get_verification_url(self):
+        return self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/api/confirm_user?token=' + self.verification_token
+    
+    @api.model
     def _validate_user(self,token):
 
-        user = self.env['res.users'].search([("verification_token",'=',token),("verification_token",'!=',"False")],limit=1)
+        user = self.env['res.users'].search([("verification_token",'=',token),("verification_token",'!=',"False"),("status",'=',"invalid")],limit=1)
     
         if not user :
-            return("Unvalid token or an already verified user")
+            raise ValidationError("Error: No user was found!")
         else :
-            user.write({
+            user.with_user(SUPERUSER_ID).write({
             "status": "valid",  
             "verification_token": "False"  
         })
-            return("User verified successfully")
+            return ({"response":f"User with id {user.id} was verified successfully!"})
 
     # Bypass company check because we won't need it in this model
     @api.constrains('company_id')
