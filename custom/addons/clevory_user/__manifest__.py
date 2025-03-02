@@ -5,7 +5,7 @@
     'depends':['base','web','mail'],
     'controllers':['controllers/clevory_register_controller.py',],
     'data': [
-    'data/email_templates.xml',
+    'data/learner_mail_template.xml','data/employee_mail_template.xml','data/hr_mail_template.xml'
     ],
     'application':True,
     'installable':True

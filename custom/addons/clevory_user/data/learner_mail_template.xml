@@ -1,7 +1,7 @@
 <odoo>
     <data>
             <record id="user_registration_learner_mail_template" model="mail.template">
-            <field name="name">User Validation Email</field>
+            <field name="name">User Validation Email Type Learner</field>
             <field name="model_id" ref="model_res_users"/>
             <field name="subject">Please Validate Your Account</field>
             <field name="email_from">clevorytraining@example.com</field>  

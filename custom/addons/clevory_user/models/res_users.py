@@ -42,8 +42,9 @@ class ClevoryUser (models.Model):
         if not vals.get('name') or not vals.get('login') or not vals.get('email') or not vals.get('password') or not vals.get('type') :
             raise ValidationError("Missing important fields")
         
-        company = None
+        
         #Validate and retrieve company from res.partner
+        company = None
         if vals.get('type') in ["employee","hr"]:
             if 'company' in vals or 'company_ref' in vals:
                 company = self.env['res.partner'].search([("name",'=',vals.get('company'))],limit=1)
@@ -59,8 +60,8 @@ class ClevoryUser (models.Model):
             if vals.get('type') == "hr":
                 if company.hr_ref:
                     raise ValidationError("Company already has an HR assigned.")
-            else:
-                vals['company_ref'] = company.id
+            
+            vals['company_ref'] = company.id
 
             #Deleting the company key from vals as it is not a field in the res.users model
             del vals['company']
@@ -91,12 +92,27 @@ class ClevoryUser (models.Model):
         if not self.verification_token:
             raise ValueError("User has no verification token")
         
-        template = self.env.ref('clevory_user.user_registration_learner_mail_template')
+
+        match self.type:
+            case "learner":
+                template = self.env.ref('clevory_user.user_registration_learner_mail_template')
+            case "employee":
+                template = self.env.ref('clevory_user.user_registration_employee_mail_template')
+            case "hr":
+                template = self.env.ref('clevory_user.user_registration_hr_mail_template')
+            case _:
+                raise ValueError("User type is not recognized!")
+
+
+
         template.send_mail(self.id, force_send=True)
 
     def _get_verification_url(self):
         return self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/api/confirm_user?token=' + self.verification_token
     
+    def _get_admin(self):
+        admin = self.env['res.users'].search([("id",'=',"2")], limit=1)
+        return admin
     @api.model
     def _validate_user(self,token):
 
@@ -121,9 +137,9 @@ class ClevoryUser (models.Model):
     @api.constrains('type', 'company_ref')
     def _check_company_relationship(self):
         for user in self:     
-            if user.type == 'employee' :
+            if user.type in ['employee','hr']:
                 if not user.company_ref:
-                    raise ValidationError("An employee must be linked to a company.")
+                    raise ValidationError("An Employee or an HR must be linked to a company.")
                 elif user.company_ref.is_company != True:
                     raise ValidationError("Invald company")
             elif user.type == 'learner' and user.company_ref:
