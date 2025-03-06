@@ -47,7 +47,7 @@ class ClevoryUser (models.Model):
         company = None
         if vals.get('type') in ["employee","hr"]:
             if 'company' in vals or 'company_ref' in vals:
-                company = self.env['res.partner'].search([("name",'=',vals.get('company'))],limit=1)
+                company = self.env['res.partner'].search([("name",'=',vals.get('company')),('is_company','=',True)],limit=1)
                 if not company: 
                     raise ValidationError("Company not found")
             else:

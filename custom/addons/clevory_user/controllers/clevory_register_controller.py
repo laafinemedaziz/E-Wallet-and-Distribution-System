@@ -10,12 +10,14 @@ class RegisterControler(http.Controller):
         print (vals)
         return request.env['res.users'].sudo().sign_up_user(vals)
 
+    """
+    #This endpoint would only be available for the admin (to develop later with other company CRUD operations)
     @http.route('/api/add_company', type='json',auth='none', methods=['POST'], csrf=False)
     def add_company(self):
         vals = request.httprequest.get_json()
         print(vals)
         company = request.env['res.partner'].sudo().add_new_company(vals)
-        return company.id
+        return company.id """ 
     
     @http.route('/api/confirm_user', type='http', auth='none', methods=['GET'], csrf=False)
     def verify_user(self):
