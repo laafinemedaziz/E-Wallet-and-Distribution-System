@@ -24,6 +24,10 @@ class ClevoryUser (models.Model):
         ('valid', 'Valid')],
         default='invalid')
     
+    active = fields.Boolean(default=False)
+
+    
+    
     company_id = fields.Many2one('res.company', string='Company', required=False)
 
     company_ref = fields.Many2one('res.partner',String="Company",domain="[('is_company', '=', True)]")
@@ -69,8 +73,8 @@ class ClevoryUser (models.Model):
         token = secrets.token_urlsafe(16)
         
         vals['verification_token'] = token
-
-        user= self.env['res.users'].with_user(SUPERUSER_ID).create(vals)
+        vals['signup_type'] = 'password'
+        user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(vals)
 
         #Asigning the user to the company if they are of type HR
         if user.type == 'hr':
@@ -103,8 +107,6 @@ class ClevoryUser (models.Model):
             case _:
                 raise ValueError("User type is not recognized!")
 
-
-
         template.send_mail(self.id, force_send=True)
 
     def _get_verification_url(self):
@@ -116,13 +118,18 @@ class ClevoryUser (models.Model):
     @api.model
     def _validate_user(self,token):
 
-        user = self.env['res.users'].search([("verification_token",'=',token),("verification_token",'!=',"False"),("status",'=',"invalid")],limit=1)
+        user = self.env['res.users'].search([
+            ("verification_token",'=',token),
+            ("verification_token",'!=',"False"),
+            ("status",'=',"invalid"),
+            ("active",'=',False)],limit=1)
     
         if not user :
             raise ValidationError("Error: No user was found!")
         else :
             user.with_user(SUPERUSER_ID).write({
-            "status": "valid",  
+            "status": "valid", 
+            "active":True, 
             "verification_token": "False"  
         })
             return ({"response":f"User with id {user.id} was verified successfully!"})

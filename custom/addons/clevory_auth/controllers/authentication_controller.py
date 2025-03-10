@@ -25,6 +25,7 @@ class authController(Session):
         requestBody = request.httprequest.get_json()
         if 'login' not in requestBody or 'password' not in requestBody:
             raise ValidationError("Missing important credentials to authenticate")
+        
 
         login = requestBody.get('login')
         password = requestBody.get('password')
@@ -32,10 +33,14 @@ class authController(Session):
 
         #Check if user is valid (Email verification constraint)
         user = request.env['res.users'].sudo().search([('login','=',login)],limit=1)
+
+        
         if not user:
             raise AccessError('Invalid credentials')
         elif user.status == 'invalid':
             raise AccessError("User is not valid.")
+        if user.signup_type != "password":
+            raise ValidationError("Wrong credentials")
         
         #Calling the odoo's authentication method with the right parameters
         session_infos = super().authenticate(db, login, password)

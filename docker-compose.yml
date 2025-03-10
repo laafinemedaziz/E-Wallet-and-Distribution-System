@@ -18,6 +18,8 @@ services:
     depends_on:
       - odoo_db
     restart: always
+    env_file:
+      - .env
 
   odoo_db:
     image: postgres:17
