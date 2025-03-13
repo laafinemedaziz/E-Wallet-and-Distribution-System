@@ -38,15 +38,12 @@ class ResUsers(models.Model):
         
         #validation = self._auth_oauth_rpc("https://www.googleapis.com/oauth2/v3/userinfo",access_token)
 
-        db, login, access_token = self.sudo().auth_oauth(3,resData)
+        db, login, access_token = self.with_user(SUPERUSER_ID).auth_oauth(3,resData)
+        credentials = {'login':login, 'token':access_token, 'type':'oauth_token'}
         if not login or not access_token or not db:
             raise AccessDenied("There was a problem authenticated you.")
         else:
-            return {
-                "login":login,
-                "response":"User with the login has been authenticated successfully!",
-                "session_id":'Set to cookies.'
-            }
+            return credentials
         
 
     @api.model
@@ -56,19 +53,19 @@ class ResUsers(models.Model):
         if not oauth_user:
             values = self._generate_signup_values(provider, validation, params)
             oauth_user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(values)
-            authenticate = oauth_user.login
-            if not authenticate:
+            login = oauth_user.login
+            if not login:
                 raise AccessDenied("There was a problem authenticating you in.")
             else:
-                return authenticate
+                return login
 
         else:
             oauth_user.write({'oauth_access_token': params['access_token']})
-            authenticate = oauth_user.login
-            if not authenticate:
+            login = oauth_user.login
+            if not login:
                 raise AccessDenied("There was a problem authenticating you in.")
             else:
-                return authenticate
+                return login
 
     @api.model
     def _generate_signup_values(self, provider, validation, params):
@@ -87,3 +84,7 @@ class ResUsers(models.Model):
             'type':"learner",
             'signup_type':"oauth"
         }
+    
+    
+ 
+    

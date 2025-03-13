@@ -30,20 +30,22 @@ class authController(Session):
         login = requestBody.get('login')
         password = requestBody.get('password')
         db = request.db
+        #credentials = {'login':login, 'password':password, 'type':"password"}
 
         #Check if user is valid (Email verification constraint)
-        user = request.env['res.users'].sudo().search([('login','=',login)],limit=1)
+        user = request.env['res.users'].sudo().with_context(active_test=False).search([('login','=',login)],limit=1)
 
         
         if not user:
-            raise AccessError('Invalid credentials')
+            raise AccessError(f'Error: Invalid credentials.')
         elif user.status == 'invalid':
-            raise AccessError("User is not valid.")
+            raise AccessError("Error: User is not valid.")
         if user.signup_type != "password":
-            raise ValidationError("Wrong credentials")
+            raise ValidationError("Error: Wrong credentials")
         
         #Calling the odoo's authentication method with the right parameters
         session_infos = super().authenticate(db, login, password)
         
-        return {'uid':request.session.uid,
-            'message':"user is successfully authenticated."}
+        return {
+            'message':f"User {login} authenticated successfully."
+        }
