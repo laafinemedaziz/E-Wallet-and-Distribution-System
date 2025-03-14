@@ -33,11 +33,9 @@ class ResUsers(models.Model):
                 "redirect_uri":oauth_credentials["web"]["redirect_uris"][0]
                 }
         #request the access token
-        response = requests.post("https://oauth2.googleapis.com/token",json=data)
+        response = requests.post(oauth_credentials['web']['token_uri'],json=data)
         resData = response.json()
         
-        #validation = self._auth_oauth_rpc("https://www.googleapis.com/oauth2/v3/userinfo",access_token)
-
         db, login, access_token = self.with_user(SUPERUSER_ID).auth_oauth(3,resData)
         credentials = {'login':login, 'token':access_token, 'type':'oauth_token'}
         if not login or not access_token or not db:
@@ -82,7 +80,7 @@ class ResUsers(models.Model):
             'active': True,
             'status':"valid",
             'type':"learner",
-            'signup_type':"oauth"
+            'signup_type':'oauth_token'
         }
     
     
