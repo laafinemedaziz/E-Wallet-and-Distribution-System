@@ -74,6 +74,8 @@ class ClevoryUser (models.Model):
         
         vals['verification_token'] = token
         vals['signup_type'] = 'password'
+        portal_group = self.env.ref("base.group_portal")
+        vals['groups_id'] = [(6, 0, [portal_group.id])]
         user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(vals)
 
         #Asigning the user to the company if they are of type HR

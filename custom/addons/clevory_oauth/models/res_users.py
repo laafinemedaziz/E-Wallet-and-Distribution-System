@@ -70,6 +70,7 @@ class ResUsers(models.Model):
         oauth_uid = validation['user_id']
         email = validation.get('email', 'provider_%s_user_%s' % (provider, oauth_uid))
         name = validation.get('name', email)
+        portal_group = self.env.ref('base.group_portal')
         return {
             'name': name,
             'login': email,
@@ -80,7 +81,8 @@ class ResUsers(models.Model):
             'active': True,
             'status':"valid",
             'type':"learner",
-            'signup_type':'oauth_token'
+            'signup_type':'oauth_token',
+            'groups_id':[(6, 0, [portal_group.id])]
         }
     
     
