@@ -1,5 +1,4 @@
 import logging
-from queue import Full
 import secrets
 from odoo import models, fields, api
 from odoo import SUPERUSER_ID
@@ -26,10 +25,13 @@ class ClevoryUser (models.Model):
     
     active = fields.Boolean(default=False)
 
-    
-    
+    #Wallet field
+    ewallet_id = fields.Many2one('res.ewallet',String="E-Wallet id",unique=True,ondelete='cascade')
+
+    #by passing the company restrection
     company_id = fields.Many2one('res.company', string='Company', required=False)
 
+    #Actually referencing the company in res.partner
     company_ref = fields.Many2one('res.partner',String="Company",domain="[('is_company', '=', True)]")
 
     
@@ -76,7 +78,12 @@ class ClevoryUser (models.Model):
         vals['signup_type'] = 'password'
         portal_group = self.env.ref("base.group_portal")
         vals['groups_id'] = [(6, 0, [portal_group.id])]
+        
+        #Create the user
         user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(vals)
+
+        #Assign a new wallet for the user
+        user.createWallet()
 
         #Asigning the user to the company if they are of type HR
         if user.type == 'hr':
@@ -135,6 +142,13 @@ class ClevoryUser (models.Model):
             "verification_token": "False"  
         })
             return ({"response":f"User with id {user.id} was verified successfully!"})
+    
+    def createWallet(self):
+        ewallet = self.env['res.ewallet'].with_user(SUPERUSER_ID).create({
+            'user_id':self.id,
+            'debit':0
+        })
+        self.ewallet_id = ewallet.id
 
     # Bypass company check because we won't need it in this model
     @api.constrains('company_id')

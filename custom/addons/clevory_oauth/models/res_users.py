@@ -51,6 +51,7 @@ class ResUsers(models.Model):
         if not oauth_user:
             values = self._generate_signup_values(provider, validation, params)
             oauth_user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(values)
+            oauth_user.createWallet()
             login = oauth_user.login
             if not login:
                 raise AccessDenied("There was a problem authenticating you in.")
@@ -83,6 +84,7 @@ class ResUsers(models.Model):
             'type':"learner",
             'signup_type':'oauth_token',
             'groups_id':[(6, 0, [portal_group.id])]
+            
         }
     
     
