@@ -3,7 +3,7 @@ import secrets
 from odoo import models, fields, api
 from odoo import SUPERUSER_ID
 from odoo.exceptions import ValidationError
-
+from odoo.exceptions import AccessDenied, UserError
 
 
 _logger = logging.getLogger(__name__)
@@ -149,6 +149,14 @@ class ClevoryUser (models.Model):
             'debit':0
         })
         self.ewallet_id = ewallet.id
+    
+    @api.model
+    def getEmps(self, user):
+        if user.type != 'hr':
+            raise AccessDenied(f"Prohibited action for user type: {user.type}")
+        else:
+            emps =  self.search([('company_ref','=',user.company_ref.id),('id','!=',user.id)])
+            return emps
 
     # Bypass company check because we won't need it in this model
     @api.constrains('company_id')

@@ -1,7 +1,7 @@
 from odoo import models, fields, api
 from odoo import SUPERUSER_ID
 from odoo.exceptions import ValidationError
-
+from odoo.exceptions import AccessDenied, UserError
 class EWallet(models.Model):
 
     _name = 'res.ewallet'
@@ -21,3 +21,14 @@ class EWallet(models.Model):
                 "owner": wallet.user_id.name,
                 "debit" : wallet.debit
             }
+        
+    @api.model
+    def getEmpsWallets(self, user):
+        if user.type != 'hr':
+            raise AccessDenied(f"Prohibited action for user type: {user.type}")
+        else:
+            emps = self.env['res.users'].getEmps(user)
+            emps_id = [emp.id for emp in emps]
+            
+            wallets = self.search([('user_id','in',emps_id)])
+            return wallets.read(['id','user_id','debit'])

@@ -2,6 +2,7 @@ import json
 from odoo import http
 from odoo.http import request, Response
 from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessDenied, UserError
 
 class WalletController(http.Controller):
 
@@ -10,3 +11,12 @@ class WalletController(http.Controller):
         user = request.env.user
         wallet = request.env['res.ewallet'].with_user(user.id).getWallet(user)
         return (Response(json.dumps(wallet),content_type='application/json'))
+    
+    @http.route('/api/getEmpsWallet', type='http', auth='user', methods=['GET'], csrf=False)
+    def getEmpsWallets(self):
+        user = request.env.user
+        if user.type != 'hr':
+            raise AccessDenied(f"Prohibited action for user type: {user.type}")
+        else:
+            wallets = request.env['res.ewallet'].with_user(user.id).getEmpsWallets(user)
+            return (Response(json.dumps(wallets),content_type='application/json'))
