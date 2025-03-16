@@ -77,7 +77,7 @@ class ClevoryUser (models.Model):
         vals['verification_token'] = token
         vals['signup_type'] = 'password'
         portal_group = self.env.ref("base.group_portal")
-        vals['groups_id'] = [(6, 0, [portal_group.id])]
+        vals['groups_id'] = [(6, 0, [self.assignGroup(vals.get('type')).id])]
         
         #Create the user
         user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(vals)
@@ -149,6 +149,15 @@ class ClevoryUser (models.Model):
             'debit':0
         })
         self.ewallet_id = ewallet.id
+    
+    @api.model
+    def assignGroup(self,user_type):
+        match user_type:
+            case 'hr': return self.env['res.groups'].search([('name','=','HR Group')])
+            case 'employee':  return self.env['res.groups'].search([('name','=','Employee Group')])
+            case 'learner': return self.env['res.groups'].search([('name','=','Learner Group')])
+            case default: raise ValueError("User type not recognized")
+
     
     @api.model
     def getEmps(self, user):
