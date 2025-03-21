@@ -20,3 +20,11 @@ class WalletController(http.Controller):
         else:
             wallets = request.env['res.ewallet'].with_user(user.id).getEmpsWallets(user)
             return (Response(json.dumps(wallets),content_type='application/json'))
+        
+    @http.route('/api/sendCredit', type='http', auth='user', methods=['GET'], csrf=False)
+    def sendCredit(self):
+        sender = request.env.user
+        receiver_wallet_id = request.params.get('receiver_wallet_id')
+        amount = float(request.params.get('amount'))
+        response = request.env['res.ewallet'].with_user(sender.id).transferCredit(sender,receiver_wallet_id,amount)
+        return(Response(json.dumps(response),content_type='application/json'))

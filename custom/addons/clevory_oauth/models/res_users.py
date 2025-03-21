@@ -83,7 +83,7 @@ class ResUsers(models.Model):
             'status':"valid",
             'type':"learner",
             'signup_type':'oauth_token',
-            'groups_id':[(6, 0, [portal_group.id])]
+            'groups_id':[(6, 0, [self.assignGroup('learner').id])]
             
         }
     

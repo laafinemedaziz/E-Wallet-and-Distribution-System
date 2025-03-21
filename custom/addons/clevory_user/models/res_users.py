@@ -76,7 +76,6 @@ class ClevoryUser (models.Model):
         
         vals['verification_token'] = token
         vals['signup_type'] = 'password'
-        portal_group = self.env.ref("base.group_portal")
         vals['groups_id'] = [(6, 0, [self.assignGroup(vals.get('type')).id])]
         
         #Create the user
@@ -124,6 +123,11 @@ class ClevoryUser (models.Model):
     def _get_admin(self):
         admin = self.env['res.users'].search([("id",'=',"2")], limit=1)
         return admin
+    
+    def validate_user(self):
+        if self.status != 'valid' or self.active != True:
+            return False
+        return True
     @api.model
     def _validate_user(self,token):
 
