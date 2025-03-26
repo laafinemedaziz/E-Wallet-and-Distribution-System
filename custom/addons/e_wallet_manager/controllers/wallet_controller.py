@@ -15,6 +15,7 @@ class WalletController(http.Controller):
     @http.route('/api/getEmpsWallet', type='http', auth='user', methods=['GET'], csrf=False)
     def getEmpsWallets(self):
         user = request.env.user
+        #Change it to check whether he has a certain group or not instead of chekcing type
         if user.type != 'hr':
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:

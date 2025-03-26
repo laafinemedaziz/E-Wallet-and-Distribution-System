@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   odoo_app:
     image: odoo:18
@@ -6,15 +8,16 @@ services:
       - "8069:8069"
       - "8071-8072:8071-8072"
     environment:
-      - HOST=odoo_db
-      - USER=odoo
-      - PASSWORD=odoo
-      - DB_NAME=odoo
-      - DB_PORT=5432
+      - PGHOST=odoo_db
+      - PGUSER=odoo
+      - PGPASSWORD=odoo
+      - PGDATABASE=odoo
     volumes:
       - ./custom/addons:/mnt/extra-addons
+      - odoo_data:/var/lib/odoo 
     depends_on:
       - odoo_db
+    command: odoo -i base --db_host=odoo_db --db_user=odoo --db_password=odoo --db_name=odoo
     restart: always
     env_file:
       - .env
@@ -33,3 +36,4 @@ services:
 
 volumes:
   odoo_db_data:
+  odoo_data:
