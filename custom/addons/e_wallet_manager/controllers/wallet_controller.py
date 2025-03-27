@@ -16,7 +16,7 @@ class WalletController(http.Controller):
     def getEmpsWallets(self):
         user = request.env.user
         #Change it to check whether he has a certain group or not instead of chekcing type
-        if user.type != 'hr':
+        if user.has_group('clevory_user.hr_group_manager') != 'hr':
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:
             wallets = request.env['res.ewallet'].with_user(user.id).getEmpsWallets(user)

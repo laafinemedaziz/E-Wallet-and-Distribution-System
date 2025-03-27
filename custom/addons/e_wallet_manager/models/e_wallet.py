@@ -8,7 +8,7 @@ class EWallet(models.Model):
     _description = "The EWallet model"
 
     user_id = fields.Many2one('res.users',string="User ID",required=True,unique=True,ondelete='cascade')
-    debit = fields.Float(string="Debit")
+    balance = fields.Float(string="Balance")
 
     @api.model
     def getWallet(self,user):
@@ -19,19 +19,19 @@ class EWallet(models.Model):
             return {
                 "id" : wallet.id,
                 "owner": wallet.user_id.name,
-                "debit" : wallet.debit
+                "balance" : wallet.balance
             }
         
     @api.model
     def getEmpsWallets(self, user):
-        if user.type != 'hr':
+        if user.has_groûp('clevory_user.hr_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:
             emps = self.env['res.users'].getEmps(user)
             emps_id = [emp.id for emp in emps]
             
             wallets = self.search([('user_id','in',emps_id)])
-            return wallets.read(['id','user_id','debit'])
+            return wallets.read(['id','user_id','balance'])
         
     #--------------------------------------------------------------------------------
     #----------------------------Deposit funds method--------------------------------
@@ -42,7 +42,7 @@ class EWallet(models.Model):
     @api.model
     def transferCredit(self,sender,receiver_wallet_id,amount):
 
-        if sender.type != 'hr':
+        if sender.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied("Unauthorized")
         if amount <= 0:
             raise ValidationError("Transfered amount cannot be negative.")
@@ -61,7 +61,7 @@ class EWallet(models.Model):
         if not sender_wallet or not receiver_wallet.exists():
             raise ValidationError("Error: There was a problem retreiving wallets.")
         else:
-            if (sender_wallet.debit - amount) < 0 :
+            if (sender_wallet.balance - amount) < 0 :
                 raise ValidationError("Error: Not enough credits. Buy Learning Credits into you account and then re-try.")
             else:
                 if self.transfer(sender_wallet,receiver_wallet,amount):
@@ -78,11 +78,11 @@ class EWallet(models.Model):
             
     @api.model
     def transfer(self,sender_wallet,receiver_wallet,amount):
-        new_debit_receiver = receiver_wallet.debit + amount
-        new_debit_sender = sender_wallet.debit - amount
+        new_balance_receiver = receiver_wallet.balance + amount
+        new_balance_sender = sender_wallet.balance - amount
         with self.env.cr.savepoint():
-            receiver_wallet.write({'debit':new_debit_receiver})
-            sender_wallet.write({'debit':new_debit_sender})
+            receiver_wallet.write({'balance':new_balance_receiver})
+            sender_wallet.write({'balance':new_debit_sender})
         return True
 
 

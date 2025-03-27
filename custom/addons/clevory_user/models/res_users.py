@@ -150,16 +150,16 @@ class ClevoryUser (models.Model):
     def createWallet(self):
         ewallet = self.env['res.ewallet'].with_user(SUPERUSER_ID).create({
             'user_id':self.id,
-            'debit':0
+            'balance':0
         })
         self.ewallet_id = ewallet.id
     
     @api.model
     def assignGroup(self,user_type):
         match user_type:
-            case 'hr': return self.env['res.groups'].search([('name','=','HR Group')])
-            case 'employee':  return self.env['res.groups'].search([('name','=','Employee Group')])
-            case 'learner': return self.env['res.groups'].search([('name','=','Learner Group')])
+            case 'hr': return self.env.ref('clevory_user.hr_group_manager')
+            case 'employee':  return self.env.ref('clevory_user.employee_group_manager')
+            case 'learner': return self.env.ref('clevory_user.learner_group_manager')
             case default: raise ValueError("User type not recognized")
 
     
