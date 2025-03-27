@@ -8,8 +8,13 @@ class EWallet(models.Model):
     _description = "The EWallet model"
 
     user_id = fields.Many2one('res.users',string="User ID",required=True,unique=True,ondelete='cascade')
-    balance = fields.Float(string="Balance")
-
+    balance = fields.Monetary(string="Balance",currency_field="currency_id")
+    currency_id = fields.Many2one('res.currency',
+                                    string='Currency',
+                                    required=True,
+                                    default=lambda self: self.env.ref('e_wallet_manager.learning_coins'))
+    
+   
     @api.model
     def getWallet(self,user):
         wallet = self.search([('id','=',user.ewallet_id.id)],limit=1)
@@ -24,7 +29,7 @@ class EWallet(models.Model):
         
     @api.model
     def getEmpsWallets(self, user):
-        if user.has_groûp('clevory_user.hr_group_manager'):
+        if user.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:
             emps = self.env['res.users'].getEmps(user)
@@ -82,7 +87,7 @@ class EWallet(models.Model):
         new_balance_sender = sender_wallet.balance - amount
         with self.env.cr.savepoint():
             receiver_wallet.write({'balance':new_balance_receiver})
-            sender_wallet.write({'balance':new_debit_sender})
+            sender_wallet.write({'balance':new_balance_sender})
         return True
 
 

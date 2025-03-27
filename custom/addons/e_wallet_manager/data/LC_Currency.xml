@@ -1,0 +1,9 @@
+<!-- This is the E-wallet custom currency (Learning Coins) definition file. -->
+<odoo>
+    <record id="learning_coins" model='res.currency' >
+        <field name="name" >LC</field>
+        <field name="full_name" >Learning Coins</field>
+        <field name="symbol" >LC</field>
+        <field name= "rounding">1</field>
+    </record>
+</odoo>
