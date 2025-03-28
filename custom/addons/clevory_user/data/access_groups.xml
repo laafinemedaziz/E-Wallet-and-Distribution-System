@@ -1,0 +1,11 @@
+<odoo>
+    <record id='employee_group_manager' model='res.groups'>
+        <field name='name'>Employee Group</field>
+    </record>
+    <record id='hr_group_manager' model='res.groups'>
+        <field name='name'>HR Group</field>
+    </record>
+    <record id='learner_group_manager' model='res.groups'>
+        <field name='name'>Learner Group</field>
+    </record>
+</odoo>

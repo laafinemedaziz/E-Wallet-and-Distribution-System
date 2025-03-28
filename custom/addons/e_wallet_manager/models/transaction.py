@@ -32,7 +32,7 @@ class transaction(models.Model):
                         'receiver_wallet_id':receiver_wallet.id,
                         'sender_id':sender_wallet.user_id.id,
                         'sender_wallet_id':sender_wallet.id,
-                        'transfered_amount':amount}
+                        'transferred_amount':amount}
         else:
             return False
 

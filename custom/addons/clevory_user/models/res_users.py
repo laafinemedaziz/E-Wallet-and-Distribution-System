@@ -165,7 +165,7 @@ class ClevoryUser (models.Model):
     
     @api.model
     def getEmps(self, user):
-        if user.type != 'hr':
+        if not user.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:
             emps =  self.search([('company_ref','=',user.company_ref.id),('id','!=',user.id)])

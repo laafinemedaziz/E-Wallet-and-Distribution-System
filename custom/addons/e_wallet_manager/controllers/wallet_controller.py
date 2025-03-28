@@ -16,7 +16,7 @@ class WalletController(http.Controller):
     def getEmpsWallets(self):
         user = request.env.user
         #Change it to check whether he has a certain group or not instead of chekcing type
-        if user.has_group('clevory_user.hr_group_manager') != 'hr':
+        if not user.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:
             wallets = request.env['res.ewallet'].with_user(user.id).getEmpsWallets(user)
@@ -25,7 +25,10 @@ class WalletController(http.Controller):
     @http.route('/api/sendCredit', type='http', auth='user', methods=['GET'], csrf=False)
     def sendCredit(self):
         sender = request.env.user
-        receiver_wallet_id = request.params.get('receiver_wallet_id')
-        amount = float(request.params.get('amount'))
-        response = request.env['res.ewallet'].with_user(sender.id).transferCredit(sender,receiver_wallet_id,amount)
-        return(Response(json.dumps(response),content_type='application/json'))
+        if not sender.has_group('clevory_user.hr_group_manager'):
+            raise AccessDenied(f"Prohibited action for user type: {sender.type}")
+        else:
+            receiver_wallet_id = request.params.get('receiver_wallet_id')
+            amount = float(request.params.get('amount'))
+            response = request.env['res.ewallet'].with_user(sender.id).transferCredit(sender,receiver_wallet_id,amount)
+            return(Response(json.dumps(response),content_type='application/json'))

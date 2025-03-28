@@ -30,7 +30,7 @@ class EWallet(models.Model):
         
     @api.model
     def getEmpsWallets(self, user):
-        if user.has_group('clevory_user.hr_group_manager'):
+        if not user.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:
             emps = self.env['res.users'].getEmps(user)
