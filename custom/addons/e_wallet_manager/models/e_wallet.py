@@ -12,7 +12,8 @@ class EWallet(models.Model):
     currency_id = fields.Many2one('res.currency',
                                     string='Currency',
                                     required=True,
-                                    default=lambda self: self.env.ref('e_wallet_manager.learning_coins'))
+                                    default=lambda self: self.env.ref('e_wallet_manager.learning_coins'),
+                                    readonly=True)
     
    
     @api.model
@@ -47,7 +48,7 @@ class EWallet(models.Model):
     @api.model
     def transferCredit(self,sender,receiver_wallet_id,amount):
 
-        if sender.has_group('clevory_user.hr_group_manager'):
+        if not sender.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied("Unauthorized")
         if amount <= 0:
             raise ValidationError("Transfered amount cannot be negative.")
@@ -56,7 +57,7 @@ class EWallet(models.Model):
         
 
         if sender.company_ref != receiver_wallet.user_id.company_ref:
-            raise ValidationError("You cannot tranfer credits to employees outside your company.")
+            raise ValidationError(f"You cannot tranfer credits to employees outside your company. {sender.company_ref} ?= {receiver_wallet.user_id.company_ref}")
         
         if not receiver_wallet.user_id.validate_user():
             raise ValidationError("The receiver is not a valid user.")
@@ -69,15 +70,24 @@ class EWallet(models.Model):
             if (sender_wallet.balance - amount) < 0 :
                 raise ValidationError("Error: Not enough credits. Buy Learning Credits into you account and then re-try.")
             else:
-                if self.transfer(sender_wallet,receiver_wallet,amount):
-                    return({
+                transfer = self.transfer(sender_wallet,receiver_wallet,amount)
+                if transfer:
+                    transaction_record,response= self.env['res.transactions'].record_transaction(sender_wallet,
+                                                                                                        receiver_wallet,
+                                                                                                        amount)
+                    if transaction_record:
+                        return response
+                    else:
+                        raise ValidationError("There was an error recording your transaction.")
+                    
+                    """ return({
                         'response':f"Amount transfered successfully to user {receiver_wallet.user_id.login}",
                         'receiver_id':receiver_wallet.user_id.id,
                         'receiver_wallet_id':receiver_wallet.id,
                         'sender_id':sender.id,
                         'sender_wallet_id':sender_wallet.id,
                         'transfered_amount':amount
-                    })
+                    }) """
                 else:
                     raise ValidationError("Error: There was a problem transfering the credits.")
             
