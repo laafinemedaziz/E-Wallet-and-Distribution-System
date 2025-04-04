@@ -57,7 +57,7 @@ class EWallet(models.Model):
         
 
         if sender.company_ref != receiver_wallet.user_id.company_ref:
-            raise ValidationError(f"You cannot tranfer credits to employees outside your company. {sender.company_ref} ?= {receiver_wallet.user_id.company_ref}")
+            raise ValidationError(f"You cannot tranfer credits to employees outside your company.")
         
         if not receiver_wallet.user_id.validate_user():
             raise ValidationError("The receiver is not a valid user.")

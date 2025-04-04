@@ -17,7 +17,6 @@ services:
       - odoo_data:/var/lib/odoo 
     depends_on:
       - odoo_db
-    command: odoo -i base --db_host=odoo_db --db_user=odoo --db_password=odoo --db_name=odoo
     restart: always
     env_file:
       - .env

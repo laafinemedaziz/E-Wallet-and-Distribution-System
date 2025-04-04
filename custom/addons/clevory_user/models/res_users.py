@@ -8,8 +8,10 @@ from odoo.exceptions import AccessDenied, UserError
 
 _logger = logging.getLogger(__name__)
 
-
-
+"""
+* This module is responsible for managing the users of the application.
+* It allows users to sign up, validate their email, and manage their accounts.
+"""
 class ClevoryUser (models.Model):
     _inherit = 'res.users'
 
@@ -128,6 +130,7 @@ class ClevoryUser (models.Model):
         if self.status != 'valid' or self.active != True:
             return False
         return True
+    
     @api.model
     def _validate_user(self,token):
 

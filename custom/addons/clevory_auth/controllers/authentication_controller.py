@@ -16,6 +16,11 @@ from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
+"""
+* This module is responsible for basic login/password based authentication
+* Loging users in by granting them a session ID and storing it in their browser cookies.
+"""
+
 class authController(Session):
     
     @http.route('/web/session/authenticate', type='json', auth="none")

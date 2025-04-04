@@ -12,6 +12,23 @@ import os
 
 _logger = logging.getLogger(__name__)
 
+"""
+* In this module we are going to implement the Google OAuth2 authentication flow.
+* For that we customized the odoo's auth.oauth built-in module.
+* We added a layer for requesting the access token using an authorization code as 
+  the exisitng odoo system assumes that we already have the access token.
+* This module also creates a new user if they do not already exist in the database.
+* Workflow:
+    1. The user clicks on the Google login button in the frontend.
+    2. The frontend redirects the user to the Google OAuth2 authorization page.
+    3. The user grants permission to the application to access their Google account.
+    4. Google redirects the user back to the application with an authorization code.
+    5. The application exchanges the authorization code for an access token.
+    6. The application uses the access token to retrieve the user's information from Google.
+    7. The application creates a new user in the database if they do not already exist.
+    8. The application logs the user in returning Credentials as a response to the front-end 
+       and storing a session ID in their browser cookies (.authenticate() method the controller).
+"""
 class ResUsers(models.Model):
 
     _inherit = 'res.users'
@@ -32,16 +49,18 @@ class ResUsers(models.Model):
                 "grant_type":"authorization_code",
                 "redirect_uri":oauth_credentials["web"]["redirect_uris"][0]
                 }
-        #request the access token
+        #request the access token from Google
         response = requests.post(oauth_credentials['web']['token_uri'],json=data)
         resData = response.json()
-        
-        db, login, access_token = self.with_user(SUPERUSER_ID).auth_oauth(3,resData)
-        credentials = {'login':login, 'token':access_token, 'type':'oauth_token'}
-        if not login or not access_token or not db:
-            raise AccessDenied("There was a problem authenticated you.")
-        else:
-            return credentials
+        if response.status_code != 200:
+            raise AccessDenied("There was a problem retrieving your data from the OAuth provider.")
+        else: 
+            db, login, access_token = self.with_user(SUPERUSER_ID).auth_oauth(3,resData)
+            credentials = {'login':login, 'token':access_token, 'type':'oauth_token'}
+            if not login or not access_token or not db:
+                raise AccessDenied("There was a problem authenticated you in.")
+            else:
+                return credentials
         
 
     @api.model

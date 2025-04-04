@@ -1,0 +1,7 @@
+<odoo>
+    <record id='learning_coin_product' model='product.product'>
+        <field name='name'>Learning Coin</field>
+        <field name='default_code'>LC_1</field>
+        <field name='type'>service</field>
+    </record>
+</odoo>

@@ -12,6 +12,7 @@ class OauthController(http.Controller):
         credentials = request.env['res.users'].sudo().authenticate_with_google(code)
         request.env.cr.commit()
         db = request.db
+        #log the user and store a session ID in their browser cookies 
         auth_infos = request.session.authenticate(db,credentials)
         return Response(json.dumps(auth_infos),content_type='json')
     
