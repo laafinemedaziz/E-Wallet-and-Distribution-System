@@ -35,4 +35,3 @@ class transaction(models.Model):
                         'transferred_amount':amount}
         else:
             return False
-
