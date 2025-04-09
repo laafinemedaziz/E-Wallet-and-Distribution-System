@@ -19,13 +19,18 @@ class FundWalletController(http.Controller):
             return(Response(json.dumps(response),content_type='application/json'))
         
 
-    @http.route('/fund_wallet/pay_invoice', type='http', auth='user', method=['GET'], csrf=False)
-    def payInvoice(self):
-        user = request.env.user
+    @http.route('/fund_wallet/<string:invoice_id>/pay_invoice', type='http', auth='none', method=['POST'], csrf=False, cors="*")
+    def payInvoice(self,invoice_id):
+        #user = request.env.user
         #quantity = request.params.get('quantity')
         data = {
             ""
         }
-        access_token = request.env['account.move'].with_user(SUPERUSER_ID)._getPaypalAccessToken()
+        order_data = request.env['account.move'].with_user(SUPERUSER_ID).paypalCreateOrder(invoice_id)
 
-        return (Response(json.dumps(access_token),content_type='application/json'))
+        return (Response(json.dumps(order_data),content_type='application/json'))
+    
+    @http.route('/api/orders/<string:orderID>/capture', type='http', auth='none', method=['POST'], csrf=False, cors="*")
+    def  capturePaymentPaypal(self,orderID):
+        payment_capture = request.env['account.move'].with_user(SUPERUSER_ID).capturePaymentPaypal(orderID)
+        return (Response(json.dumps(payment_capture),content_type='application/json'))
