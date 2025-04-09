@@ -26,11 +26,11 @@ class FundWalletController(http.Controller):
         data = {
             ""
         }
-        order_data = request.env['account.move'].with_user(SUPERUSER_ID).paypalCreateOrder(invoice_id)
+        order_data = request.env['account.payment'].with_user(SUPERUSER_ID).paypalCreateOrder(invoice_id)
 
         return (Response(json.dumps(order_data),content_type='application/json'))
     
     @http.route('/api/orders/<string:orderID>/capture', type='http', auth='none', method=['POST'], csrf=False, cors="*")
     def  capturePaymentPaypal(self,orderID):
-        payment_capture = request.env['account.move'].with_user(SUPERUSER_ID).capturePaymentPaypal(orderID)
+        payment_capture = request.env['account.payment'].with_user(SUPERUSER_ID).capturePaymentPaypal(orderID)
         return (Response(json.dumps(payment_capture),content_type='application/json'))
