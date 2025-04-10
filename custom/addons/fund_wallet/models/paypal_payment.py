@@ -62,9 +62,18 @@ class PaypalPay (models.Model):
         if payment_data.get('status') != "COMPLETED":
             raise ValidationError('ERROR: Payment is not completed')
         
-        record_payment = self.createPaymentRecord(payment_data)
+        record_payment,invoice = self.createPaymentRecord(payment_data)
         if not record_payment:
             raise ValidationError("ERROR: Payment was not recorded.")
+        if  invoice.payment_state != "paid":
+            raise ValidationError("ERROR: invoice was not paid")
+        
+        fund_wallet = self.env['res.ewallet'].with_user(SUPERUSER_ID).fundWallet(invoice)
+
+        if not fund_wallet:
+            raise ValidationError("ERROR: coins were not added to wallet.")
+
+
         
         return payment_data
     
@@ -122,25 +131,28 @@ class PaypalPay (models.Model):
         amount_paid = paymentData.get('purchase_units')[0].get('payments').get('captures')[0].get('amount').get('value') 
         Currency = self.env.ref('base.TND')
         payment_record = self.with_user(SUPERUSER_ID).create({
-            'move_id':invoice.id,
             'journal_id':13,
-            'company_id':1,
             'payment_method_id':1,
             #'payment_method_line_id':"",
-            'currency_id':Currency.id,
             'amount':amount_paid,
             'partner_id':invoice.partner_id.id,
             'memo':invoice.name,
             'partner_type':'customer',
-            'payment_type':'inbound'
+            'payment_type':'inbound',
+            'invoice_ids': [(6, 0, [invoice.id])],
 
 
         })
         if not payment_record:
             raise ValidationError("Something went wrong: payment not recorded.")
-        payment_record.action_post()
-        invoice._compute_payment_state()
-        return True
+        
+        payment_record.action_validate()
+
+        (payment_record.move_id.line_ids + invoice.line_ids)\
+        .filtered(lambda l: l.account_id.account_type == 'asset_receivable' and not l.reconciled).reconcile()
+        self.env.cr.commit()
 
 
-
+        return True,invoice
+    
+    

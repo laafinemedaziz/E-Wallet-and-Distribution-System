@@ -42,6 +42,28 @@ class EWallet(models.Model):
     #--------------------------------------------------------------------------------
     #----------------------------Deposit funds method--------------------------------
     #--------------------------------------------------------------------------------
+    @api.model
+    def fundWallet(self,invoice):
+        if invoice.payment_state != "paid":
+            raise ValidationError("ERROR: invoice was not paid")
+        
+        user = invoice.partner_id.user_id
+        user_wallet = user.ewallet_id
+        if not user_wallet:
+            raise ValidationError("ERROR: User does not have an e-wallet.")
+        paid_quantity = 0  
+        for line in invoice.line_ids:
+            paid_quantity += line.quantity
+        new_balance =  int(user_wallet.balance + paid_quantity)
+        print(new_balance)
+        self.env.cr.savepoint()
+        user_wallet.write(
+            {
+                'balance':new_balance,
+            }
+        )
+        self.env.cr.commit()
+        return True
 
 
 
@@ -73,8 +95,8 @@ class EWallet(models.Model):
                 transfer = self.transfer(sender_wallet,receiver_wallet,amount)
                 if transfer:
                     transaction_record,response= self.env['res.transactions'].record_transaction(sender_wallet,
-                                                                                                        receiver_wallet,
-                                                                                                        amount)
+                                                                                                    receiver_wallet,
+                                                                                                    amount)
                     if transaction_record:
                         return response
                     else:
