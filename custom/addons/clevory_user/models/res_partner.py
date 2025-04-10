@@ -21,4 +21,11 @@ class Partner(models.Model):
 
         company = self.env['res.partner'].with_user(SUPERUSER_ID).create(vals)
         return company
+    
+    #Assign the correct user_id in the res.partner model on creation
+    @api.model
+    def _assignUserIDToPartner(self,user):
+        self.with_user(SUPERUSER_ID).write({
+            'user_id':user.id,
+        })
         

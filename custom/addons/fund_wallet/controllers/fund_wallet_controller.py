@@ -20,14 +20,8 @@ class FundWalletController(http.Controller):
         
 
     @http.route('/fund_wallet/<string:invoice_id>/pay_invoice', type='http', auth='none', method=['POST'], csrf=False, cors="*")
-    def payInvoice(self,invoice_id):
-        #user = request.env.user
-        #quantity = request.params.get('quantity')
-        data = {
-            ""
-        }
+    def payInvoice(self,invoice_id):        
         order_data = request.env['account.payment'].with_user(SUPERUSER_ID).paypalCreateOrder(invoice_id)
-
         return (Response(json.dumps(order_data),content_type='application/json'))
     
     @http.route('/api/orders/<string:orderID>/capture', type='http', auth='none', method=['POST'], csrf=False, cors="*")
