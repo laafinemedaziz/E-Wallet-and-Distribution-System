@@ -15,12 +15,17 @@ class WalletController(http.Controller):
     @http.route('/api/getEmpsWallet', type='http', auth='user', methods=['GET'], csrf=False)
     def getEmpsWallets(self):
         user = request.env.user
-        #Change it to check whether he has a certain group or not instead of chekcing type
         if not user.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         else:
             wallets = request.env['res.ewallet'].with_user(user.id).getEmpsWallets(user)
             return (Response(json.dumps(wallets),content_type='application/json'))
+    
+    @http.route('/api/getTransactions', type='http', auth='user', methods=['GET'], csrf=False)
+    def getTransactions(self):
+        user = request.env.user
+        transactions = request.env['res.transactions'].with_user(user.id).getTransactions(user)
+        return (Response(json.dumps(transactions),content_type='application/json'))
         
     @http.route('/api/sendCredit', type='http', auth='user', methods=['GET'], csrf=False)
     def sendCredit(self):
