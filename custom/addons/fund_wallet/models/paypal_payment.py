@@ -38,8 +38,8 @@ class PaypalPay (models.Model):
         
     @api.model
     def _getAccessToken(self):
-        CLIENT_ID = ""
-        CLIENT_SECRET = ""
+        CLIENT_ID = "AdkAgKhLGFuGf9K3hiBKvdat45f4wBbUuJU7Zm26Sx_C4PsrjMtzNrSCw4HWaJS-w2oHwlGLmWcLpRIn"
+        CLIENT_SECRET = "EN974vtoRE7FMBMGnD3bjM1_UxsXjG9TJx48wM_dgSTlYYF-dLTWyNHww5INrgo853L-SjWwhnPXrFUF"
         URL = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
         HEADERS = {'Content-Type': "application/x-www-form-urlencoded"}
         DATA = {'grant_type':"client_credentials"}
