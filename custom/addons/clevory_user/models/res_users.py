@@ -82,18 +82,22 @@ class ClevoryUser (models.Model):
         
         #Create the user
         user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(vals)
-
+        if not user :
+            raise ValidationError("User creation failed")
         #Assign a new wallet for the user
         user.createWallet()
 
+        #Assign correct user_id in res.partner model
+        partner = user.partner_id
+        partner._assignUserIDToPartner(user)
+        
         #Asigning the user to the company if they are of type HR
         if user.type == 'hr':
             company.write({'hr_ref':user.id})
 
         user._send_validation_email()
         
-        if not user :
-            raise ValidationError("User creation failed")
+        
         return(user)
     
     def _send_validation_email(self):
@@ -191,3 +195,5 @@ class ClevoryUser (models.Model):
                     raise ValidationError("Invald company")
             elif user.type == 'learner' and user.company_ref:
                 raise ValidationError("A learner should not be linked to a company.")
+    
+    

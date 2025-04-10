@@ -71,6 +71,8 @@ class ResUsers(models.Model):
             values = self._generate_signup_values(provider, validation, params)
             oauth_user= self.env['res.users'].with_context(no_reset_password=True).with_user(SUPERUSER_ID).create(values)
             oauth_user.createWallet()
+            partner = oauth_user.partner_id
+            partner._assignUserIDToPartner(oauth_user)
             login = oauth_user.login
             if not login:
                 raise AccessDenied("There was a problem authenticating you in.")

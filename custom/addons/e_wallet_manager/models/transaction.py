@@ -9,21 +9,32 @@ class transaction(models.Model):
     _name = 'res.transactions'
     _description = "Transactions Records"
     
-    sender_wallet_id = fields.Many2one('res.wallet', string='Sender Wallet', required=True)
-    receiver_wallet_id = fields.Many2one('res.wallet', string="Receiver Wallet", required=True)
+    user_id = fields.Many2one('res.users', string='User ID', required=True)
+    sender_wallet_id = fields.Many2one('res.ewallet', string='Sender Wallet')
+    receiver_wallet_id = fields.Many2one('res.ewallet', string="Receiver Wallet")
     amount = fields.Monetary(string="Amount", currency_field="currency_id")
     currency_id = fields.Many2one('res.currency',
                                     string='Currency',
                                     required=True,
                                     default=lambda self: self.env.ref('e_wallet_manager.learning_coins'),
                                     readonly=True)
-
+    category = fields.Selection([('transfer','Transfer'),
+                                 ('purchase','Purchase'),
+                                 ('payment','Payment')], required=True)
+    """
+    Transaction categories:
+        *Transfer: LC sent from one wallet to another (Only HRs have the right to make this kind of transactions).
+        *Purchase: Products bought with LC.
+        *Payment: LC bought with real currency.
+    """
     @api.model
-    def record_transaction(self, sender_wallet, receiver_wallet, amount):
-        transaction = self.create({
+    def record_transfer(self, sender_wallet, receiver_wallet, amount):
+        transaction = self.with_user(SUPERUSER_ID).create({
             'sender_wallet_id':sender_wallet.id,
             'receiver_wallet_id':receiver_wallet.id,
-            'amount':amount
+            'user_id':sender_wallet.user_id.id,
+            'amount':amount,
+            'category':"transfer"
         })
         if transaction:
             return True, {'response':(f"Amount transfered successfully to user {receiver_wallet.user_id.login}. "
@@ -35,3 +46,44 @@ class transaction(models.Model):
                         'transferred_amount':amount}
         else:
             return False
+        
+    @api.model
+    def record_payment(self,user,amount):
+        transaction = self.with_user(SUPERUSER_ID).create({
+            'receiver_wallet_id':user.ewallet_id.id,
+            'user_id':user.id,
+            'amount':amount,
+            'category':"payment"
+        })
+        if transaction:
+            return True, {
+                            'response':("Payment recorded successfully."
+                            f"Transaction successfully recorded under ID: {transaction.id}"),
+                            'receiver_id':user.id,
+                            'receiver_wallet_id':user.ewallet_id.id,
+                            'amount':amount
+                            }
+        else:
+            return False
+
+    @api.model
+    def getTransactions(self,user):
+        transactions = self.search([('user_id','=',user.id)])
+        
+        return transactions.read(['sender_wallet_id','receiver_wallet_id','category','amount'])
+    
+    @api.constrains('category','sender_wallet_id','receiver_wallet_id')
+    def _check_constraints(self):
+        for record in self:
+            if record.category == 'transfer':
+                if not record.sender_wallet_id or not record.receiver_wallet_id:
+                    raise ValidationError("A transaction of type 'transfer' must have two wallets linked to it.")
+            elif record.category == 'purchase':
+                if record.receiver_wallet_id or not record.sender_wallet_id:
+                    raise ValidationError("A transaction of type 'purchase' must have only the sender wallet linked to it.")
+            elif record.category == 'payment':
+                if record.sender_wallet_id or not record.receiver_wallet_id:
+                    raise ValidationError("A transaction of type 'payment' must have only the receiver wallet linked to it.")
+            else:
+                raise ValidationError(f"Unknown transaction category: {record.category}")
+
