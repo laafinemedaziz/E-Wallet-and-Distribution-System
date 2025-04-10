@@ -55,7 +55,7 @@ class ClevoryUser (models.Model):
         company = None
         if vals.get('type') in ["employee","hr"]:
             if 'company' in vals or 'company_ref' in vals:
-                company = self.env['res.partner'].search([("name",'=',vals.get('company')),('is_company','=',True)],limit=1)
+                company = self.env['res.partner'].search([("company_code",'=',vals.get('company')),('is_company','=',True)],limit=1)
                 if not company: 
                     raise ValidationError("Company not found")
             else:
@@ -98,7 +98,7 @@ class ClevoryUser (models.Model):
         user._send_validation_email()
         
         
-        return(user)
+        return(user.with_user(SUPERUSER_ID).read(['login']))
     
     def _send_validation_email(self):
 
@@ -151,7 +151,7 @@ class ClevoryUser (models.Model):
             "status": "valid", 
             "active":True, 
             "verification_token": "False"  
-        })
+        })  
             return ({"response":f"User with id {user.id} was verified successfully!"})
     
     def createWallet(self):

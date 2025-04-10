@@ -8,7 +8,8 @@ class RegisterControler(http.Controller):
     def sign_up_user(self):
         vals = request.httprequest.get_json()
         print (vals)
-        return request.env['res.users'].sudo().sign_up_user(vals)
+        user = request.env['res.users'].sudo().sign_up_user(vals)
+        return Response(json.dumps(user),content_type='application/json') 
 
 
     #This endpoint would only be available for the admin (to develop later with other company CRUD operations)
@@ -17,7 +18,7 @@ class RegisterControler(http.Controller):
         vals = request.httprequest.get_json()
         print(vals)
         company = request.env['res.partner'].sudo().add_new_company(vals)
-        return company.id
+        return Response(json.dumps(company),content_type='application/json')
     
     @http.route('/api/confirm_user', type='http', auth='none', methods=['GET'], csrf=False)
     def verify_user(self):
@@ -26,4 +27,4 @@ class RegisterControler(http.Controller):
             raise ValidationError("No Valid Token Found")
         else:
             response = request.env['res.users'].sudo()._validate_user(token)
-            return Response(json.dumps(response),content_type='json') 
+            return Response(json.dumps(response),content_type='application/json') 
