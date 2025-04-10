@@ -6,7 +6,8 @@ from odoo.exceptions import AccessDenied, UserError
 from odoo import SUPERUSER_ID
 import requests
 import logging
-
+import os
+import json
 
 _logger = logging.getLogger(__name__)
 
@@ -38,8 +39,15 @@ class PaypalPay (models.Model):
         
     @api.model
     def _getAccessToken(self):
-        CLIENT_ID = "AdkAgKhLGFuGf9K3hiBKvdat45f4wBbUuJU7Zm26Sx_C4PsrjMtzNrSCw4HWaJS-w2oHwlGLmWcLpRIn"
-        CLIENT_SECRET = "EN974vtoRE7FMBMGnD3bjM1_UxsXjG9TJx48wM_dgSTlYYF-dLTWyNHww5INrgo853L-SjWwhnPXrFUF"
+        #I know these are not supposed to be here am just lazy.
+        Paypal_credentials_str = os.getenv("PAYPAL_CREDENTIALS")
+        if Paypal_credentials_str:
+            Paypal_credentials = json.loads(Paypal_credentials_str)
+        else:
+            raise ValueError("PAYPAL_CREDENTIALS environment variable not found!")
+        
+        CLIENT_ID = Paypal_credentials["CLIENT_ID"]
+        CLIENT_SECRET = Paypal_credentials["CLIENT_SECRET"]
         URL = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
         HEADERS = {'Content-Type': "application/x-www-form-urlencoded"}
         DATA = {'grant_type':"client_credentials"}
@@ -133,7 +141,6 @@ class PaypalPay (models.Model):
         payment_record = self.with_user(SUPERUSER_ID).create({
             'journal_id':13,
             'payment_method_id':1,
-            #'payment_method_line_id':"",
             'amount':amount_paid,
             'partner_id':invoice.partner_id.id,
             'memo':invoice.name,
