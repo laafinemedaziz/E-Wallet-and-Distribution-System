@@ -34,13 +34,12 @@ class ClevoryUser (models.Model):
     company_id = fields.Many2one('res.company', string='Company', required=False)
 
     #Actually referencing the company in res.partner
-    company_ref = fields.Many2one('res.partner',String="Company",domain="[('is_company', '=', True)]")
+    company_ref = fields.Many2one('res.partner',String="Company",domain="[('is_company', '=', True)]") 
 
-    
-    
+
     verification_token = fields.Char()
 
-    
+    reset_password_token = fields.Char()
     #Group is a computed field based on type to develop later
 
     @api.model
@@ -123,6 +122,7 @@ class ClevoryUser (models.Model):
 
         template.send_mail(self.id, force_send=True)
 
+    #------------------------------------------------------Validate User------------------------------------------------------
     def _get_verification_url(self):
         return self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/api/confirm_user?token=' + self.verification_token
     
@@ -178,10 +178,58 @@ class ClevoryUser (models.Model):
             emps =  self.search([('company_ref','=',user.company_ref.id),('id','!=',user.id)])
             return emps
 
+    #------------------------------------------------------Reset Password------------------------------------------------------
+    @api.model
+    def _sendpasswordResetEmail(self,email):
+        user = self.with_user(SUPERUSER_ID).search([('email','=',email),('signup_type','=','password')])
+        if not user :
+            raise ValidationError(f"No user matched this email: {email}. Please double check and try again.")
+        resetCode = secrets.token_urlsafe(16)
+        user.with_user(SUPERUSER_ID).write({
+            'reset_password_token':resetCode
+        })
+        template = self.env.ref('clevory_user.reset_password_mail_template')
+        template.send_mail(user.id, force_send=True)
+        return {
+            'response':f"Reset password email sent to {email}. Check your inbox."
+        }
+    
+    def _passwordResetLinkFormatter(self):
+        return self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/api/validateResetToken?token=' + self.reset_password_token
+    
+    @api.model
+    def validateResetToken(self,token):
+        if token == None or token == "":
+            raise ValidationError("Invalid token")
+        
+        user = self.with_user(SUPERUSER_ID).search([('reset_password_token','=',token)])
+        if not user:
+            raise ValidationError("Unvalid or expired token. Try resetting your password again.")
+        
+        return {
+            'response':True
+        }
+    
+    def resetPassword(self,token,newPassword):
+        user = self.with_user(SUPERUSER_ID).search([('reset_password_token','=',token)])
+        if not user:
+            raise ValidationError("Unvalid or expired token. Try resetting your password again.")
+        
+        user.with_user(SUPERUSER_ID).write({
+            'password':newPassword,
+            'reset_password_token':None
+        })
+        return {
+            'response':f"Password changed successfully. You can now log into your account."
+        }
+
+
+        
     # Bypass company check because we won't need it in this model
     @api.constrains('company_id')
     def _check_company(self):
         pass  
+    
     
 
     #Contrainst for the company_ref field 

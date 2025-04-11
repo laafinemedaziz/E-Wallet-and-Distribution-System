@@ -68,9 +68,13 @@ class transaction(models.Model):
 
     @api.model
     def getTransactions(self,user):
-        transactions = self.search([('user_id','=',user.id)])
+        transaction_records = self.search([('user_id','=',user.id)])
         
-        return transactions.read(['sender_wallet_id','receiver_wallet_id','category','amount'])
+        transactions = transaction_records.read(['sender_wallet_id','create_date','receiver_wallet_id','category','amount'])
+        for record in transactions:
+            record['create_date'] = str(record.get('create_date'))
+
+        return transactions
     
     @api.constrains('category','sender_wallet_id','receiver_wallet_id')
     def _check_constraints(self):

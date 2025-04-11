@@ -12,7 +12,7 @@ import json
 _logger = logging.getLogger(__name__)
 
 """
----------------------------------Add Comment------------------------------
+This model is responsioble for handeling payment by Paypal
 """
 class PaypalPay (models.Model):
     _inherit = 'account.payment'
@@ -39,7 +39,6 @@ class PaypalPay (models.Model):
         
     @api.model
     def _getAccessToken(self):
-        #I know these are not supposed to be here am just lazy.
         Paypal_credentials_str = os.getenv("PAYPAL_CREDENTIALS")
         if Paypal_credentials_str:
             Paypal_credentials = json.loads(Paypal_credentials_str)

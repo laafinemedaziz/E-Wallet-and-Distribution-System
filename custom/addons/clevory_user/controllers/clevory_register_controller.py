@@ -28,3 +28,22 @@ class RegisterControler(http.Controller):
         else:
             response = request.env['res.users'].sudo()._validate_user(token)
             return Response(json.dumps(response),content_type='application/json') 
+        
+    @http.route('/api/request_passwordReset', type='http', auth='none', methods=['POST'], csrf=False)
+    def requestPasswordReset(self):
+        
+        email = request.httprequest.get_json().get('email')
+        check = request.env['res.users'].sudo()._sendpasswordResetEmail(email)
+        return Response(json.dumps(check),content_type='application/json')
+    
+    @http.route('/api/validateResetToken', type='http', auth='none', methods=['GET'], csrf=False)
+    def validateResetToken(self):
+        token = request.params.get('token')
+        validate = request.env['res.users'].sudo().validateResetToken(token)
+        return Response(json.dumps(validate),content_type='application/json') 
+    
+    @http.route('/api/reset_password', type='http', auth='none', methods=['POST'], csrf=False)
+    def resetPassword(self):
+        vals = request.httprequest.get_json()
+        reset = request.env['res.users'].sudo().resetPassword(vals.get('token'),vals.get('newPassword'))
+        return Response(json.dumps(reset),content_type='application/json')
