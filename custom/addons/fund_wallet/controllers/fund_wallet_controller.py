@@ -28,3 +28,22 @@ class FundWalletController(http.Controller):
     def  capturePaymentPaypal(self,orderID):
         payment_capture = request.env['account.payment'].with_user(SUPERUSER_ID).capturePaymentPaypal(orderID)
         return (Response(json.dumps(payment_capture),content_type='application/json'))
+    
+    @http.route('/api/getPayments', type='http', auth='user', method=['GET'], csrf=False)
+    def getPayments(self):
+        user = request.env.user
+        if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.employee_group_manager'):
+            raise AccessDenied('Not allowed') 
+        
+        payments = request.env['account.payment'].with_user(SUPERUSER_ID).getPayments(user)
+        return (Response(json.dumps(payments),content_type='application/json'))
+    
+    @http.route('/api/getInvoices', type='http', auth='user', method=['GET'], csrf=False)
+    def getPayments(self):
+        user = request.env.user
+        if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.employee_group_manager'):
+            raise AccessDenied('Not allowed') 
+        
+        invoices = request.env['account.move'].with_user(SUPERUSER_ID).getUnpaidInvoices(user)
+        return (Response(json.dumps(invoices),content_type='application/json'))
+

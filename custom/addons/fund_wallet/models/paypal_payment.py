@@ -164,3 +164,20 @@ class PaypalPay (models.Model):
         (payment.move_id.line_ids + invoice.line_ids)\
         .filtered(lambda l: l.account_id.account_type == 'asset_receivable' and not l.reconciled)\
         .reconcile()
+
+    @api.model
+    def getPayments(self,user):
+        payment_records = self.search([('partner_id','=',user.partner_id.id)])
+        payments = []
+        for record in payment_records:
+            payments.append(
+                {
+                    'id':record.id,
+                    'ref':record.name,
+                    'date':str(record.date),
+                    'invoice':record.memo,
+                    'amount':record.amount,
+                    'currency':record.currency_id.name,
+                }
+            )
+        return payments
