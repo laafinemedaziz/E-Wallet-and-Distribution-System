@@ -69,7 +69,9 @@ class PaypalPay (models.Model):
         if payment_data.get('status') != "COMPLETED":
             raise ValidationError('ERROR: Payment is not completed')
         
-        record_payment,invoice = self.createPaymentRecord(payment_data)
+        record_payment,invoice,payment = self.createPaymentRecord(payment_data)
+        payment.sendReceiptEmail()
+
         if not record_payment:
             raise ValidationError("ERROR: Payment was not recorded.")
         if  invoice.payment_state != "paid":
@@ -146,8 +148,6 @@ class PaypalPay (models.Model):
             'partner_type':'customer',
             'payment_type':'inbound',
             'invoice_ids': [(6, 0, [invoice.id])],
-
-
         })
         if not payment_record:
             raise ValidationError("Something went wrong: payment not recorded.")
@@ -157,7 +157,7 @@ class PaypalPay (models.Model):
         #Reconcile payment and invoice
         self._reconcilePaymentInvoice(payment_record,invoice)
         self.env.cr.commit()
-        return True,invoice
+        return True,invoice,payment_record
     
     @api.model
     def _reconcilePaymentInvoice(self,payment,invoice):
@@ -181,3 +181,7 @@ class PaypalPay (models.Model):
                 }
             )
         return payments
+    
+    def sendReceiptEmail(self):
+        template = self.env.ref('fund_wallet.billing_receipt_mail_template')
+        template.send_mail(self.id, force_send=True)

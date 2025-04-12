@@ -11,6 +11,8 @@ class FundWalletController(http.Controller):
     @http.route('/fund_wallet/request_invoice', type='http', auth='user', methods=['GET'], csrf=False)
     def createInvoice(self):
         user = request.env.user
+        if not user.has_group('clevory_user.hr_group_manager'):
+            raise AccessDenied(f"Prohibited action for user type: {user.type}")
         lc_quantity= request.params.get('quantity')
         if not lc_quantity:
             raise ValidationError("Error: Missing parameter 'quantity'")
@@ -32,17 +34,17 @@ class FundWalletController(http.Controller):
     @http.route('/api/getPayments', type='http', auth='user', method=['GET'], csrf=False)
     def getPayments(self):
         user = request.env.user
-        if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.employee_group_manager'):
+        if not user.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied('Not allowed') 
         
         payments = request.env['account.payment'].with_user(SUPERUSER_ID).getPayments(user)
         return (Response(json.dumps(payments),content_type='application/json'))
     
     @http.route('/api/getInvoices', type='http', auth='user', method=['GET'], csrf=False)
-    def getPayments(self):
+    def getInvoices(self):
         user = request.env.user
-        if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.employee_group_manager'):
-            raise AccessDenied('Not allowed') 
+        if not user.has_group('clevory_user.hr_group_manager'):
+            raise AccessDenied('Not allowed')
         
         invoices = request.env['account.move'].with_user(SUPERUSER_ID).getUnpaidInvoices(user)
         return (Response(json.dumps(invoices),content_type='application/json'))
