@@ -33,7 +33,7 @@ class FundWallet (models.Model):
             'currency_id':Currency.id
         }
 
-        invoice = self.with_user(SUPERUSER_ID).create(invoice_metadata)
+        invoice = self.create(invoice_metadata)
 
         if not invoice:
             raise ValidationError("Invoice creation failed.")
@@ -50,7 +50,7 @@ class FundWallet (models.Model):
 
 
     def _createInvoiceLine(self,LC,lc_quantity,invoice,user):
-        return self.env['account.move.line'].with_user(SUPERUSER_ID).create({
+        return self.env['account.move.line'].create({
             'move_id':invoice.id,
             'product_id':LC.id,
             'quantity':lc_quantity,

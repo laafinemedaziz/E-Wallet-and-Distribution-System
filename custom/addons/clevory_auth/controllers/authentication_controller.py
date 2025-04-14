@@ -51,6 +51,8 @@ class authController(Session):
         #Calling the odoo's authentication method with the right parameters
         session_infos = super().authenticate(db, login, password)
         
-        return {
-            'message':f"User {login} authenticated successfully."
-        }
+        return (Response(json.dumps({
+            'message':f"User {login} authenticated successfully. Session ID set to cookies",
+            'user_id':session_infos.get('uid'),
+            'name':session_infos.get('name')
+        }),content_type='application/json'))

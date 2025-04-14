@@ -62,7 +62,7 @@ class EWallet(models.Model):
                 'balance':new_balance,
             }
         )
-        record_payment,response = self.env['res.transactions'].with_user(SUPERUSER_ID).record_payment(user,paid_quantity)
+        record_payment,response = self.env['res.transactions'].record_payment(user,paid_quantity)
         self.env.cr.commit()
         return True
 
@@ -119,8 +119,8 @@ class EWallet(models.Model):
         new_balance_receiver = receiver_wallet.balance + amount
         new_balance_sender = sender_wallet.balance - amount
         with self.env.cr.savepoint():
-            receiver_wallet.with_user(SUPERUSER_ID).write({'balance':new_balance_receiver})
-            sender_wallet.with_user(SUPERUSER_ID).write({'balance':new_balance_sender})
+            receiver_wallet.write({'balance':new_balance_receiver})
+            sender_wallet.write({'balance':new_balance_sender})
         return True
 
 

@@ -11,13 +11,13 @@ class FundWalletController(http.Controller):
     @http.route('/fund_wallet/request_invoice', type='http', auth='user', methods=['GET'], csrf=False)
     def createInvoice(self):
         user = request.env.user
-        if not user.has_group('clevory_user.hr_group_manager'):
+        if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.learner_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {user.type}")
         lc_quantity= request.params.get('quantity')
         if not lc_quantity:
             raise ValidationError("Error: Missing parameter 'quantity'")
         else:
-            response = request.env['account.move'].with_user(user.id).createInvoice(lc_quantity,user)
+            response = request.env['account.move'].with_user(SUPERUSER_ID).createInvoice(lc_quantity,user)
             return(Response(json.dumps(response),content_type='application/json'))
         
 
@@ -34,7 +34,7 @@ class FundWalletController(http.Controller):
     @http.route('/api/getPayments', type='http', auth='user', method=['GET'], csrf=False)
     def getPayments(self):
         user = request.env.user
-        if not user.has_group('clevory_user.hr_group_manager'):
+        if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.learner_group_manager'):
             raise AccessDenied('Not allowed') 
         
         payments = request.env['account.payment'].with_user(SUPERUSER_ID).getPayments(user)
@@ -43,7 +43,7 @@ class FundWalletController(http.Controller):
     @http.route('/api/getInvoices', type='http', auth='user', method=['GET'], csrf=False)
     def getInvoices(self):
         user = request.env.user
-        if not user.has_group('clevory_user.hr_group_manager'):
+        if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.learner_group_manager'):
             raise AccessDenied('Not allowed')
         
         invoices = request.env['account.move'].with_user(SUPERUSER_ID).getUnpaidInvoices(user)

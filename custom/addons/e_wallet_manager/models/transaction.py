@@ -29,7 +29,7 @@ class transaction(models.Model):
     """
     @api.model
     def record_transfer(self, sender_wallet, receiver_wallet, amount):
-        transaction = self.with_user(SUPERUSER_ID).create({
+        transaction = self.create({
             'sender_wallet_id':sender_wallet.id,
             'receiver_wallet_id':receiver_wallet.id,
             'user_id':sender_wallet.user_id.id,
@@ -49,7 +49,7 @@ class transaction(models.Model):
         
     @api.model
     def record_payment(self,user,amount):
-        transaction = self.with_user(SUPERUSER_ID).create({
+        transaction = self.create({
             'receiver_wallet_id':user.ewallet_id.id,
             'user_id':user.id,
             'amount':amount,

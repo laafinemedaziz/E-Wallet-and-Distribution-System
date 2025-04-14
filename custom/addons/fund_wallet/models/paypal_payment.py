@@ -132,14 +132,14 @@ class PaypalPay (models.Model):
     @api.model
     def createPaymentRecord(self,paymentData):
         invoice_id = paymentData.get('purchase_units')[0].get('payments', {}).get('captures', [])[0].get('invoice_id')
-        invoice = self.env['account.move'].with_user(SUPERUSER_ID).search([('id','=',invoice_id)])
+        invoice = self.env['account.move'].search([('id','=',invoice_id)])
         if not invoice :
             raise ValidationError("ERROR 404: Invoice not found.")
         
         payment_date = paymentData.get('purchase_units')[0].get('payments').get('captures')[0].get('create_time')
         amount_paid = paymentData.get('purchase_units')[0].get('payments').get('captures')[0].get('amount').get('value') 
         Currency = self.env.ref('base.TND')
-        payment_record = self.with_user(SUPERUSER_ID).create({
+        payment_record = self.create({
             'journal_id':13,
             'payment_method_id':1,
             'amount':amount_paid,
