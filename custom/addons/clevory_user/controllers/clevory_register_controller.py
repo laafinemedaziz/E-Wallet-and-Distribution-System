@@ -4,30 +4,63 @@ from odoo.http import request, Response
 from odoo.exceptions import ValidationError
 class RegisterControler(http.Controller):
 
-    @http.route('/api/sign_up_user', type='json', auth='none', methods=['POST'], csrf=False)
+    from odoo import http
+from odoo.http import request, Response
+import json
+
+class MyController(http.Controller):
+
+    def handleCORSPreflight(self):
+        headers = [
+                ('Access-Control-Allow-Origin', '*'),
+                ('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'),
+                ('Access-Control-Allow-Headers', 'Content-Type'),
+            ]
+        return Response('', status=200, headers=headers)
+    
+    @http.route('/api/sign_up_user', type='http', auth='none', methods=['POST', 'OPTIONS'], csrf=False)
     def sign_up_user(self):
-        vals = request.httprequest.get_json()
-        print (vals)
-        user = request.env['res.users'].sudo().sign_up_user(vals)
-        return Response(json.dumps(user),content_type='application/json') 
+        
+        if request.httprequest.method == 'OPTIONS':
+            return self.handleCORSPreflight()
+
+        try:
+            data = json.loads(request.httprequest.data)
+            print(data)
+
+            user = request.env['res.users'].sudo().sign_up_user(data)
+
+            headers = [
+                ('Access-Control-Allow-Origin', '*'),
+                ('Content-Type', 'application/json')
+            ]
+            return Response(json.dumps(user), headers=headers, status=200)
+
+        except Exception as error:
+            return Response(json.dumps({'error':str(error)}), status=500, content_type='application/json')
+
+
 
 
     #This endpoint would only be available for the admin (to develop later with other company CRUD operations)
-    @http.route('/api/add_company', type='json',auth='none', methods=['POST'], csrf=False)
+    @http.route('/api/add_company', type='http',auth='none', methods=['POST'], csrf=False)
     def add_company(self):
-        vals = request.httprequest.get_json()
-        print(vals)
-        company = request.env['res.partner'].sudo().add_new_company(vals)
+        data = json.loads(request.httprequest.data)
+        print(data)
+        company = request.env['res.partner'].sudo().add_new_company(data)
         return Response(json.dumps(company),content_type='application/json')
     
     @http.route('/api/confirm_user', type='http', auth='none', methods=['GET'], csrf=False)
     def verify_user(self):
-        token = request.params.get('token')
-        if not token:
-            raise ValidationError("No Valid Token Found")
-        else:
-            response = request.env['res.users'].sudo()._validate_user(token)
-            return Response(json.dumps(response),content_type='application/json') 
+        try:
+            token = request.params.get('token')
+            if not token:
+                raise ValidationError("No Valid Token Found")
+            else:
+                response = request.env['res.users'].sudo()._validate_user(token)
+                return Response(json.dumps(response),content_type='application/json') 
+        except Exception as error:
+            return Response(json.dumps({'error':str(error)}), status=500, content_type='application/json')
         
     @http.route('/api/request_passwordReset', type='http', auth='none', methods=['POST'], csrf=False)
     def requestPasswordReset(self):

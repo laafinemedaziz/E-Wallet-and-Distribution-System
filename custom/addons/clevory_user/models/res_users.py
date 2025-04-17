@@ -49,12 +49,16 @@ class ClevoryUser (models.Model):
         if not vals.get('name') or not vals.get('login') or not vals.get('email') or not vals.get('password') or not vals.get('type') :
             raise ValidationError("Missing important fields")
         
+        if vals.get('type') == 'learner':
+            if vals.get('companyCode') != "":
+                raise ValidationError("User type Learner cannot have a company. ")
+            del vals['companyCode']
         
         #Validate and retrieve company from res.partner
         company = None
         if vals.get('type') in ["employee","hr"]:
-            if 'company' in vals or 'company_ref' in vals:
-                company = self.env['res.partner'].search([("company_code",'=',vals.get('company')),('is_company','=',True)],limit=1)
+            if 'companyCode' in vals or 'company_ref' in vals:
+                company = self.env['res.partner'].search([("company_code",'=',vals.get('companyCode')),('is_company','=',True)],limit=1)
                 if not company: 
                     raise ValidationError("Company not found")
             else:
@@ -71,7 +75,7 @@ class ClevoryUser (models.Model):
             vals['company_ref'] = company.id
 
             #Deleting the company key from vals as it is not a field in the res.users model
-            del vals['company']
+            del vals['companyCode']
 
         token = secrets.token_urlsafe(16)
         
