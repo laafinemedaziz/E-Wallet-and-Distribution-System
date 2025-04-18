@@ -23,22 +23,8 @@ _logger = logging.getLogger(__name__)
 
 class authController(Session):
     
-    
-    def handleCORSPreflight(self):
-        headers = [
-                ('Access-Control-Allow-Origin', '*'),
-                ('Access-Control-Allow-Methods', 'POST, OPTIONS'),
-                ('Access-Control-Allow-Headers', 'Content-Type'),
-            ]
-        return Response('', status=200, headers=headers)
-
-        
-    @http.route('/api/authenticate', type='json', methods=['POST', 'OPTIONS'], auth="none")
+    @http.route('/web/session/authenticate', type='json', methods=['POST'], auth="none", cors="*")
     def authenticate(self):
-        if request.httprequest.method == 'OPTIONS':
-            return self.handleCORSPreflight()
-        
-        
         #Retrieving request body and validating content
         requestBody = request.httprequest.get_json()
 
@@ -69,8 +55,8 @@ class authController(Session):
                 ('Access-Control-Allow-Origin', '*'),
                 ('Content-Type', 'application/json')
             ]
-        return Response(json.dumps({
+        return Response(json.dumps([{
             'message':f"User {login} authenticated successfully. Session ID set to cookies",
             'user_id':session_infos.get('uid'),
             'name':session_infos.get('name')
-        }), headers=headers, status=200)
+        }]), headers=headers, status=200)
