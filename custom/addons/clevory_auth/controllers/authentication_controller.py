@@ -23,15 +23,24 @@ _logger = logging.getLogger(__name__)
 
 class authController(Session):
     
-    @http.route('/web/session/authenticate', type='json', methods=['POST'], auth="none", cors="*")
-    def authenticate(self):
+    def handleCORSPreflight(self):
+        headers = [
+                ('Access-Control-Allow-Origin', 'http://localhost:4200'),
+                ('Access-Control-Allow-Methods', 'GET, OPTIONS'),
+                ('Access-Control-Allow-Headers', 'Content-Type'),
+                ('Access-Control-Allow-Credentials','true')
+            ]
+        return Response('', status=204, headers=headers)
+    
+
+    @http.route('/api/web/session/authenticate', type='json', methods=['POST','OPTIONS'], auth="none",cors="http://localhost:4200")
+    def authenticate(self):   
         #Retrieving request body and validating content
         requestBody = request.httprequest.get_json()
 
         if 'login' not in requestBody or 'password' not in requestBody:
             raise ValidationError("Missing important credentials to authenticate")
         
-
         login = requestBody.get('login')
         password = requestBody.get('password')
         db = request.db
@@ -51,12 +60,35 @@ class authController(Session):
         #Calling the odoo's authentication method with the right parameters
         session_infos = super().authenticate(db, login, password)
         
+        response = {
+                'message': f"User {login} authenticated successfully.",
+                'user_id': session_infos.get('uid'),
+                'name': session_infos.get('name')
+            }
+        return response
+        
+
+
+
+    @http.route('/web/session/me', type='http', methods=['GET','OPTIONS'], auth="user")
+    def getCurrentUserInfos(self):
+        
+        if request.httprequest.method == 'OPTIONS':
+            return self.handleCORSPreflight()
+
+        user = request.env.user
+        if not user:
+            raise ValidationError("Session is invalid or expiried.")
+        
         headers = [
-                ('Access-Control-Allow-Origin', '*'),
-                ('Content-Type', 'application/json')
+                ('Access-Control-Allow-Origin', 'http://localhost:4200'),
+                ('Content-Type', 'application/json'),
+                ('Access-Control-Allow-Credentials','true')
             ]
-        return Response(json.dumps([{
-            'message':f"User {login} authenticated successfully. Session ID set to cookies",
-            'user_id':session_infos.get('uid'),
-            'name':session_infos.get('name')
-        }]), headers=headers, status=200)
+        return Response(json.dumps({
+            'userID':user.id,
+            'userName':user.name,
+            'userType':user.type,
+            'userEmail':user.email,
+            'userBalance':user.ewallet_id.balance
+        }), headers=headers,status=200)
