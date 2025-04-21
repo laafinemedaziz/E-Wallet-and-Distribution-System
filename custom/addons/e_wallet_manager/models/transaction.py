@@ -69,10 +69,21 @@ class transaction(models.Model):
     @api.model
     def getTransactions(self,user):
         transaction_records = self.search([('user_id','=',user.id)])
-        
-        transactions = transaction_records.read(['sender_wallet_id','create_date','receiver_wallet_id','category','amount'])
+        transactions = []
+        for record in transaction_records:
+            transactions.append({
+                'id':record.id,
+                'sender_wallet_id':record.sender_wallet_id.id,
+                'sender':'Self' if record.sender_wallet_id.user_id.id == record.user_id.id else "System" if not record.sender_wallet_id.user_id.id else record.sender_wallet_id.user_id.name,
+                'create_date':str(record.create_date),
+                'receiver_wallet_id':record.receiver_wallet_id.id,
+                'receiver':'Self' if record.receiver_wallet_id.user_id.id == record.user_id.id else record.receiver_wallet_id.user_id.name,
+                'category':record.category,
+                'amount':record.amount
+            })
+        """ transactions = transaction_records.read(['sender_wallet_id','create_date','receiver_wallet_id','category','amount'])
         for record in transactions:
-            record['create_date'] = str(record.get('create_date'))
+            record['create_date'] = str(record.get('create_date')) """
 
         return transactions
     

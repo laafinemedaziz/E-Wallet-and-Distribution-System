@@ -2,13 +2,10 @@ import json
 from odoo import http
 from odoo.http import request, Response
 from odoo.exceptions import ValidationError
+from odoo import SUPERUSER_ID
+
+
 class RegisterControler(http.Controller):
-
-    from odoo import http
-from odoo.http import request, Response
-import json
-
-class MyController(http.Controller):
 
     def handleCORSPreflight(self):
         headers = [
@@ -80,3 +77,18 @@ class MyController(http.Controller):
         vals = request.httprequest.get_json()
         reset = request.env['res.users'].sudo().resetPassword(vals.get('token'),vals.get('newPassword'))
         return Response(json.dumps(reset),content_type='application/json')
+    
+    @http.route('/api/getCompanyCode', type='http', auth='user', methods=['GET'], csrf=False)
+    def getCompanyCode(self):
+        user = request.env.user
+        if not user.has_group('clevory_user.hr_group_manager'):
+            raise ValidationError("Unauthorized")
+        
+        company = user.company_ref
+        if not company :
+            raise ValidationError("User has no company attached.")
+        
+        return Response(json.dumps(company.with_user(SUPERUSER_ID).read(['name','company_code'])),content_type='application/json')
+
+
+        

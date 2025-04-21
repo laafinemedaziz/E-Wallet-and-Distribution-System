@@ -74,7 +74,7 @@ class ClevoryUser (models.Model):
             
             vals['company_ref'] = company.id
 
-            #Deleting the company key from vals as it is not a field in the res.users model
+            #Deleting the companyCode key from vals as it is not a field in the res.users model
             del vals['companyCode']
 
         token = secrets.token_urlsafe(16)
