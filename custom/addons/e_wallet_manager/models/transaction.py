@@ -87,6 +87,24 @@ class transaction(models.Model):
 
         return transactions
     
+    @api.model
+    def getTransfers(self,user):
+        transfer_records = self.search([('user_id','=',user.id),('category','=','transfer')])
+        transfers = []
+        for record in transfer_records:
+            transfers.append({
+                'id':record.id,
+                'sender_wallet_id':record.sender_wallet_id.id,
+                'sender':'Self' if record.sender_wallet_id.user_id.id == record.user_id.id else "System" if not record.sender_wallet_id.user_id.id else record.sender_wallet_id.user_id.name,
+                'create_date':str(record.create_date),
+                'receiver_wallet_id':record.receiver_wallet_id.id,
+                'receiver':'Self' if record.receiver_wallet_id.user_id.id == record.user_id.id else record.receiver_wallet_id.user_id.name,
+                'category':record.category,
+                'amount':record.amount
+            })
+
+        return transfers
+    
     @api.constrains('category','sender_wallet_id','receiver_wallet_id')
     def _check_constraints(self):
         for record in self:

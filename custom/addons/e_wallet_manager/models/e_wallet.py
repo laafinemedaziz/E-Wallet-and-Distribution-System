@@ -36,8 +36,16 @@ class EWallet(models.Model):
             emps = self.env['res.users'].getEmps(user)
             emps_id = [emp.id for emp in emps]
             
-            wallets = self.search([('user_id','in',emps_id)])
-            return wallets.read(['user_id','balance'])
+            wallet_records = self.search([('user_id','in',emps_id)])
+            wallets = []
+            for record in wallet_records:
+                wallets.append({
+                    'userId' : record.user_id.id,
+                    'userName': record.user_id.name,
+                    'walletId' : record.id,
+                    'balance' : record.balance
+                })
+            return wallets
         
     #--------------------------------------------------------------------------------
     #----------------------------Deposit funds method--------------------------------

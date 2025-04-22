@@ -28,13 +28,20 @@ class WalletController(http.Controller):
         transactions = request.env['res.transactions'].with_user(SUPERUSER_ID).getTransactions(user)
         return (Response(json.dumps(transactions),content_type='application/json'))
         
-    @http.route('/api/sendCredit', type='http', auth='user', methods=['GET'], csrf=False)
+    @http.route('/api/sendCredit', type='http', auth='user', methods=['POST'], csrf=False)
     def sendCredit(self):
         sender = request.env.user
+        data = json.loads(request.httprequest.data)
         if not sender.has_group('clevory_user.hr_group_manager'):
             raise AccessDenied(f"Prohibited action for user type: {sender.type}")
         else:
-            receiver_wallet_id = request.params.get('receiver_wallet_id')
-            amount = float(request.params.get('amount'))
+            receiver_wallet_id = data.get('recipientWalletId')
+            amount = float(data.get('amount'))
             response = request.env['res.ewallet'].with_user(SUPERUSER_ID).transferCredit(sender,receiver_wallet_id,amount)
             return(Response(json.dumps(response),content_type='application/json'))
+
+    @http.route('/api/getTransfers', type='http', auth='user', methods=['GET'], csrf=False)
+    def getLatestTransfer(self):
+        user = request.env.user
+        transactions = request.env['res.transactions'].with_user(SUPERUSER_ID).getTransfers(user)
+        return (Response(json.dumps(transactions),content_type='application/json'))
