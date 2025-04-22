@@ -74,5 +74,18 @@ class FundWallet (models.Model):
             )
         return invoices
     
+    @api.model
+    def getInvoiceById(self,user,id):
+        invoice_record = self.search([('id','=',id),('partner_id','=',user.partner_id.id),('payment_state','=','not_paid'),('amount_total_signed','>',0),('move_type','=','out_invoice')])
+        
+        return {
+                    'id':invoice_record.id,
+                    'ref':invoice_record.name,
+                    'date':str(invoice_record.date),
+                    'amount':invoice_record.amount_total_signed,
+                    'currency':invoice_record.currency_id.name,
+                    'payment_state':invoice_record.payment_state
+                }
+    
     
 

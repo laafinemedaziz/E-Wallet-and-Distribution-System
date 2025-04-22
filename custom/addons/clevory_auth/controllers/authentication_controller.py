@@ -92,3 +92,13 @@ class authController(Session):
             'userEmail':user.email,
             'userBalance':user.ewallet_id.balance
         }), headers=headers,status=200)
+
+
+    @http.route('/web/session/logout', type='http', auth="user")
+    def customLogout(self):
+        request.session.logout(keep_db=True)
+        response = {
+                'message': f"User Logged Out successfully."
+            }
+        return Response(json.dumps(response),content_type='application/json')
+    
