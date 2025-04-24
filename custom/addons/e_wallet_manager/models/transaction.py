@@ -8,7 +8,7 @@ from odoo.exceptions import AccessDenied, UserError
 class transaction(models.Model):
     _name = 'res.transactions'
     _description = "Transactions Records"
-    
+    #Note: the user_id field purpose is to record the user concerned with the transaction (Can be either the sender or the receiver)
     user_id = fields.Many2one('res.users', string='User ID', required=True)
     sender_wallet_id = fields.Many2one('res.ewallet', string='Sender Wallet')
     receiver_wallet_id = fields.Many2one('res.ewallet', string="Receiver Wallet")
@@ -29,14 +29,22 @@ class transaction(models.Model):
     """
     @api.model
     def record_transfer(self, sender_wallet, receiver_wallet, amount):
-        transaction = self.create({
+        #Record double transaction, one for the sender and one for the receiver
+        transaction_sender = self.create({
             'sender_wallet_id':sender_wallet.id,
             'receiver_wallet_id':receiver_wallet.id,
             'user_id':sender_wallet.user_id.id,
             'amount':amount,
             'category':"transfer"
         })
-        if transaction:
+        transaction_receiver = self.create({
+            'sender_wallet_id':sender_wallet.id,
+            'receiver_wallet_id':receiver_wallet.id,
+            'user_id':receiver_wallet.user_id.id,
+            'amount':amount,
+            'category':"transfer"
+        })
+        if transaction_sender and transaction_receiver:
             return True, {'response':(f"Amount transfered successfully to user {receiver_wallet.user_id.login}. "
                                       f"Transaction successfully recorded under ID: {transaction.id}"),
                         'receiver_id':receiver_wallet.user_id.id,

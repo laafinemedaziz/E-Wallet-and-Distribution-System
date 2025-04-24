@@ -8,9 +8,9 @@ import odoo
 import odoo.modules.registry
 from odoo import http
 from odoo.modules import module
-from odoo.exceptions import AccessError, UserError, AccessDenied
+from odoo.exceptions import AccessError, ValidationError, UserError, AccessDenied
 from odoo.http import request, Response
-from odoo.exceptions import ValidationError
+from http import HTTPStatus
 
 
 
@@ -33,72 +33,103 @@ class authController(Session):
         return Response('', status=204, headers=headers)
     
 
-    @http.route('/api/web/session/authenticate', type='json', methods=['POST','OPTIONS'], auth="none",cors="http://localhost:4200")
-    def authenticate(self):   
-        #Retrieving request body and validating content
-        requestBody = request.httprequest.get_json()
+    @http.route('/api/web/session/authenticate', type='json', methods=['POST', 'OPTIONS'], auth="none", cors="http://localhost:4200")
+    def authenticate(self):
+        try:
+            # Retrieving request body and validating content
+            requestBody = request.httprequest.get_json()
 
-        if 'login' not in requestBody or 'password' not in requestBody:
-            raise ValidationError("Missing important credentials to authenticate")
-        
-        login = requestBody.get('login')
-        password = requestBody.get('password')
-        db = request.db
-        #credentials = {'login':login, 'password':password, 'type':"password"}
+            if 'login' not in requestBody or 'password' not in requestBody:
+                raise ValidationError("Missing important credentials to authenticate")
 
-        #Check if user is valid (Email verification constraint)
-        user = request.env['res.users'].sudo().with_context(active_test=False).search([('login','=',login)],limit=1)
+            login = requestBody.get('login')
+            password = requestBody.get('password')
+            db = request.db
 
-        
-        if not user:
-            raise AccessError(f'Error: Invalid credentials.')
-        elif user.status == 'invalid':
-            raise AccessError("Error: User is not valid.")
-        if user.signup_type != "password":
-            raise ValidationError("Error: Wrong credentials")
-        
-        #Calling the odoo's authentication method with the right parameters
-        session_infos = super().authenticate(db, login, password)
-        
-        response = {
+            # Check if user is valid (Email verification constraint)
+            user = request.env['res.users'].sudo().with_context(active_test=False).search([('login', '=', login)], limit=1)
+
+            if not user:
+                raise AccessError('Invalid credentials.')
+            elif user.status == 'invalid':
+                raise AccessError("User is not valid.")
+            if user.signup_type != "password":
+                raise ValidationError("Wrong credentials")
+
+            # Calling the Odoo's authentication method with the right parameters
+            session_infos = super().authenticate(db, login, password)
+
+            response = {
                 'message': f"User {login} authenticated successfully.",
                 'user_id': session_infos.get('uid'),
                 'name': session_infos.get('name')
             }
-        return response
+            return response
+
+        except (ValidationError, AccessError) as e:
+            return Response(
+                json.dumps({'error': str(e)}),
+                status=HTTPStatus.UNAUTHORIZED,
+                content_type='application/json'
+            )
+        except Exception as e:
+            # Handle unexpected errors
+            return Response(
+                json.dumps({'error': 'Internal Server Error', 'details': str(e)}),
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content_type='application/json'
+            )
         
 
 
 
     @http.route('/web/session/me', type='http', methods=['GET','OPTIONS'], auth="user")
     def getCurrentUserInfos(self):
-        
-        if request.httprequest.method == 'OPTIONS':
-            return self.handleCORSPreflight()
+        try:
+            if request.httprequest.method == 'OPTIONS':
+                return self.handleCORSPreflight()
 
-        user = request.env.user
-        if not user:
-            raise ValidationError("Session is invalid or expiried.")
+            user = request.env.user
+            if not user:
+                raise ValidationError("Session is invalid or expiried.")
         
-        headers = [
-                ('Access-Control-Allow-Origin', 'http://localhost:4200'),
-                ('Content-Type', 'application/json'),
-                ('Access-Control-Allow-Credentials','true')
-            ]
-        return Response(json.dumps({
-            'userID':user.id,
-            'userName':user.name,
-            'userType':user.type,
-            'userEmail':user.email,
-            'userBalance':user.ewallet_id.balance
-        }), headers=headers,status=200)
+            headers = [
+                    ('Access-Control-Allow-Origin', 'http://localhost:4200'),
+                    ('Content-Type', 'application/json'),
+                    ('Access-Control-Allow-Credentials','true')
+                ]
+            return Response(json.dumps({
+                'userID':user.id,
+                'userName':user.name,
+                'userType':user.type,
+                'userEmail':user.email,
+                'userBalance':user.ewallet_id.balance
+            }), headers=headers,status=200)
+        except (ValidationError, AccessError) as e:
+            return Response(
+                json.dumps({'error': str(e)}),
+                status=HTTPStatus.UNAUTHORIZED,
+                content_type='application/json'
+            )
+        except Exception as e:
+            # Handle unexpected errors
+            return Response(
+                json.dumps({'error': 'Internal Server Error', 'details': str(e)}),
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content_type='application/json'
+            )
 
 
     @http.route('/web/session/logout', type='http', auth="user")
     def customLogout(self):
         request.session.logout(keep_db=True)
+        headers = [
+                ('Access-Control-Allow-Origin', 'http://localhost:4200'),
+                ('Content-Type', 'application/json'),
+                ('Access-Control-Allow-Credentials','true')
+            ]
         response = {
                 'message': f"User Logged Out successfully."
             }
-        return Response(json.dumps(response),content_type='application/json')
+        return Response(json.dumps(response),headers=headers,status=200)
     

@@ -2,6 +2,7 @@ import json
 from odoo import http
 from odoo.http import request, Response
 from odoo.exceptions import ValidationError
+from werkzeug.utils import redirect
 
 class OauthController(http.Controller):
 
@@ -14,7 +15,9 @@ class OauthController(http.Controller):
         db = request.db
         #log the user and store a session ID in their browser cookies 
         auth_infos = request.session.authenticate(db,credentials)
-        return Response(json.dumps(auth_infos),content_type='json')
+        
+        
+        return redirect("http://localhost:4200/user/dashboard")
     
-
+        #return Response(json.dumps(auth_infos),content_type='json')
         #return Response(json.dumps(credentials),content_type='json') 
