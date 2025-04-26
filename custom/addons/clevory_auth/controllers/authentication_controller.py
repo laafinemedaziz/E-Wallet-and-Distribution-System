@@ -82,7 +82,7 @@ class authController(Session):
         
 
 
-
+    #Change this to a method inside the model for better maintainability
     @http.route('/web/session/me', type='http', methods=['GET','OPTIONS'], auth="user")
     def getCurrentUserInfos(self):
         try:
@@ -98,13 +98,18 @@ class authController(Session):
                     ('Content-Type', 'application/json'),
                     ('Access-Control-Allow-Credentials','true')
                 ]
-            return Response(json.dumps({
+            response = {
                 'userID':user.id,
                 'userName':user.name,
                 'userType':user.type,
                 'userEmail':user.email,
                 'userBalance':user.ewallet_id.balance
-            }), headers=headers,status=200)
+            }
+            if user.type == "hr":
+                response["companyCode"] = user.company_ref.company_code
+            return Response(json.dumps(response), headers=headers,status=200)
+        
+
         except (ValidationError, AccessError) as e:
             return Response(
                 json.dumps({'error': str(e)}),
