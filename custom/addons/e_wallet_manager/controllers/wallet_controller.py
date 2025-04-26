@@ -45,3 +45,27 @@ class WalletController(http.Controller):
         user = request.env.user
         transactions = request.env['res.transactions'].with_user(SUPERUSER_ID).getTransfers(user)
         return (Response(json.dumps(transactions),content_type='application/json'))
+    
+    @http.route('/transactions/export', type='http', auth='user', methods=['GET'])
+    def export_transactions(self, **kwargs):
+        type = request.params.get("type")
+        user = request.env.user
+        content = None
+        headers = None
+        if type == "csv":
+            content = request.env['res.transactions'].with_user(SUPERUSER_ID).getCSVReport(user)
+            headers = [
+                    ('Content-Type', 'text/csv'),
+                    ('Content-Disposition', 'attachment; filename="transactions.csv"')
+                ]
+            
+        elif type == "pdf":
+            content = request.env['res.transactions'].with_user(SUPERUSER_ID).getPDFReport(user)
+            headers=[
+                    ('Content-Type', 'application/pdf'),
+                    ('Content-Disposition', 'attachment; filename="transactions.pdf"')
+                ]
+        else:
+            return Response("Error: File type not supported.", status=404, content_type='text/plain')
+
+        return (Response(content,headers=headers))

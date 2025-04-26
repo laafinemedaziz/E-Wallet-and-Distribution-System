@@ -2,6 +2,10 @@ from odoo import models, fields, api
 from odoo import SUPERUSER_ID
 from odoo.exceptions import ValidationError
 from odoo.exceptions import AccessDenied, UserError
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import csv
+import io
 
 
 #A model to record monetary transactions between users
@@ -112,6 +116,68 @@ class transaction(models.Model):
             })
 
         return transfers
+    
+
+    @api.model
+    def getCSVReport(self,user):
+        transactions = self.getTransactions(user)
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['Transaction ID', 'Date', 'Type', 'Sender', 'Receiver', 'Amount'])
+        for record in transactions:
+            writer.writerow([record.get('id'), 
+                             record.get('create_date')[:16], 
+                             record.get('category'), 
+                             record.get('sender'), 
+                             record.get('receiver'), 
+                             record.get('amount')])
+        csv_content = output.getvalue()
+        output.close()
+        return csv_content
+    
+    def getPDFReport(self,user):
+        pdf_buffer = io.BytesIO()
+        pdf = canvas.Canvas(pdf_buffer, pagesize=letter)
+        width, height = letter
+        transactions = self.getTransactions(user)
+        # Title
+        pdf.setFont("Helvetica-Bold", 20)
+        pdf.drawString(200, 750, "Transactions Report")
+
+        # Column Headers
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(35, 700, "Transaction ID")
+        pdf.drawString(135, 700, "Date")
+        pdf.drawString(235, 700, "Type")
+        pdf.drawString(335, 700, "Sender")
+        pdf.drawString(435, 700, "Receiver")
+        pdf.drawString(535, 700, "Amount")
+
+        y = 680
+        for record in transactions:
+            pdf.setFont("Helvetica", 10)
+            pdf.drawString(35, y, str(record.get('id')))
+            pdf.drawString(135, y, record.get('create_date')[:16])
+            pdf.drawString(235, y, record.get('category'))
+            pdf.drawString(335, y, record.get('sender'))
+            pdf.drawString(435, y, record.get('receiver'))
+            pdf.drawString(535, y, f"{str(record.get('amount'))} CT")
+
+            y -= 20 
+
+            if y < 50:
+                pdf.showPage()
+                y = 750  # Reset y for the new page
+
+        pdf.save()
+        pdf_buffer.seek(0)
+        return pdf_buffer
+
+        
+
+        
+
+
     
     @api.constrains('category','sender_wallet_id','receiver_wallet_id')
     def _check_constraints(self):
