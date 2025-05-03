@@ -187,7 +187,11 @@ class ClevoryUser (models.Model):
     def _sendpasswordResetEmail(self,email):
         user = self.with_user(SUPERUSER_ID).search([('email','=',email),('signup_type','=','password')])
         if not user :
-            raise ValidationError(f"No user matched this email: {email}. Please double check and try again.")
+            return {
+              "success": False,
+              "message": f"No user matched this email: {email}. Please double check and try again."
+            }
+
         resetCode = secrets.token_urlsafe(16)
         user.with_user(SUPERUSER_ID).write({
             'reset_password_token':resetCode
@@ -195,20 +199,28 @@ class ClevoryUser (models.Model):
         template = self.env.ref('clevory_user.reset_password_mail_template')
         template.send_mail(user.id, force_send=True)
         return {
-            'response':f"Reset password email sent to {email}. Check your inbox."
+            "success": True,
+            'message':f"Reset password email sent to {email}. Check your inbox."
         }
     
     def _passwordResetLinkFormatter(self):
-        return self.env['ir.config_parameter'].sudo().get_param('web.base.url') + '/api/validateResetToken?token=' + self.reset_password_token
+        return 'http://localhost:4200/updatepassword?token=' + self.reset_password_token
     
     @api.model
     def validateResetToken(self,token):
         if token == None or token == "":
-            raise ValidationError("Invalid token")
+            return {
+                'response':False,
+                'message':'No token found'
+            }
+
         
         user = self.with_user(SUPERUSER_ID).search([('reset_password_token','=',token)])
         if not user:
-            raise ValidationError("Unvalid or expired token. Try resetting your password again.")
+            return {
+                'response':False,
+                'message':'Unvalid or expired token. Try resetting your password again.'
+            }
         
         return {
             'response':True
@@ -217,14 +229,18 @@ class ClevoryUser (models.Model):
     def resetPassword(self,token,newPassword):
         user = self.with_user(SUPERUSER_ID).search([('reset_password_token','=',token)])
         if not user:
-            raise ValidationError("Unvalid or expired token. Try resetting your password again.")
+            return {
+                'response':False,
+                'message':'Unvalid or expired token. Try resetting your password again.'
+            }
         
         user.with_user(SUPERUSER_ID).write({
             'password':newPassword,
             'reset_password_token':None
         })
         return {
-            'response':f"Password changed successfully. You can now log into your account."
+            'response':True,
+            'message':"Password changed successfully. You can now log into your account."
         }
 
 

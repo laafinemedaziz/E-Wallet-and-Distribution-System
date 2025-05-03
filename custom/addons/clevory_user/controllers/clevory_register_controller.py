@@ -66,9 +66,9 @@ class RegisterControler(http.Controller):
         check = request.env['res.users'].sudo()._sendpasswordResetEmail(email)
         return Response(json.dumps(check),content_type='application/json')
     
-    @http.route('/api/validateResetToken', type='http', auth='none', methods=['GET'], csrf=False)
+    @http.route('/api/validateResetToken', type='http', auth='none', methods=['POST'], csrf=False)
     def validateResetToken(self):
-        token = request.params.get('token')
+        token = request.httprequest.get_json().get('token')
         validate = request.env['res.users'].sudo().validateResetToken(token)
         return Response(json.dumps(validate),content_type='application/json') 
     
