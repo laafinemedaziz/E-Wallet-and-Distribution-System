@@ -51,15 +51,15 @@ class transaction(models.Model):
         if transaction_sender and transaction_receiver:
             self.env['firebase.device.token'].send_notification(
                 title="Transfer Recorded!",
-                body=f"Your transfer was successfully made.",
+                body=f"Your transfer was successfully made. {amount} coins were sent to {receiver_wallet.user_id.name}.",
                 user=sender_wallet.user_id
             )
-            """#for later
+
             self.env['firebase.device.token'].send_notification(
                 title="Coins Received!",
-                body=f"You have received coins from {sender_wallet.user_id.name}.",
+                body=f"You have received {amount} coins from {sender_wallet.user_id.name}.",
                 user=receiver_wallet.user_id
-            ) """
+            )
             return True, {'response':(f"Amount transfered successfully to user {receiver_wallet.user_id.login}. "
                                       f"Transaction successfully recorded under ID: {transaction.id}"),
                         'receiver_id':receiver_wallet.user_id.id,

@@ -59,7 +59,7 @@ class FundWallet (models.Model):
     
     @api.model
     def getUnpaidInvoices(self,user):
-        invoice_records = self.search([('partner_id','=',user.partner_id.id),('payment_state','=','not_paid'),('amount_total_signed','>',0),('move_type','=','out_invoice')])
+        invoice_records = self.search([('partner_id','=',user.partner_id.id),('amount_total_signed','>',0),('move_type','=','out_invoice')])
         invoices = []
         for record in invoice_records:
             invoices.append(

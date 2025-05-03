@@ -46,7 +46,7 @@ class DeviceToken(models.Model):
             })
 
 
-            #Record notification
+            #Record the notification in res.notifications
             self.env['res.notifications'].create({
                 'user_id': user.id,
                 'title': title,
@@ -60,8 +60,6 @@ class DeviceToken(models.Model):
 
     @api.model
     def addDeviceToken(self, user, token):
-        self.create({
-            'user_id': user.id,
-            'device_token': token
-        })
-
+        if not self.search([('user_id','=',user.id)]).device_token == token:
+            self.create({'user_id':user.id,'device_token':token})
+            return "Device token added successfully!"
