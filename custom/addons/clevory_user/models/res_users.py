@@ -238,6 +238,12 @@ class ClevoryUser (models.Model):
             'password':newPassword,
             'reset_password_token':None
         })
+        self.env['firebase.device.token'].send_notification(
+                title="Password Reset",
+                body="Your Password has been changed successfully.",
+                user=user,
+                status="alert"
+            )
         return {
             'response':True,
             'message':"Password changed successfully. You can now log into your account."

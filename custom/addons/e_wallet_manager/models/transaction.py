@@ -93,6 +93,30 @@ class transaction(models.Model):
                             }
         else:
             return False
+        
+    @api.model
+    def record_purchase(self,user,course):
+        transaction = self.create({
+            'sender_wallet_id':user.ewallet_id.id,
+            'user_id':user.id,
+            'amount':course.price_lc,
+            'category':"purchase"
+        })
+        if transaction:
+            self.env['firebase.device.token'].send_notification(
+                title="Course Purchased!",
+                body=f"Thank you for your purchase {user.name}. You can now access {course.product_tmpl_id.name}. Enjoy learning!",
+                user=user
+            )
+            return True, {
+                            'response':("purchase recorded successfully."
+                            f"Transaction successfully recorded under ID: {transaction.id}"),
+                            'receiver_id':user.id,
+                            'receiver_wallet_id':user.ewallet_id.id,
+                            'amount':course.price_lc
+                            }
+        else:
+            return False
 
     @api.model
     def getTransactions(self,user):
@@ -105,7 +129,7 @@ class transaction(models.Model):
                 'sender':'Self' if record.sender_wallet_id.user_id.id == record.user_id.id else "System" if not record.sender_wallet_id.user_id.id else record.sender_wallet_id.user_id.name,
                 'create_date':str(record.create_date),
                 'receiver_wallet_id':record.receiver_wallet_id.id,
-                'receiver':'Self' if record.receiver_wallet_id.user_id.id == record.user_id.id else record.receiver_wallet_id.user_id.name,
+                'receiver':'Self' if record.receiver_wallet_id.user_id.id == record.user_id.id else "System" if not record.receiver_wallet_id.user_id.id else record.receiver_wallet_id.user_id.name,
                 'category':record.category,
                 'amount':record.amount
             })
@@ -176,7 +200,7 @@ class transaction(models.Model):
             pdf.drawString(135, y, record.get('create_date')[:16])
             pdf.drawString(235, y, record.get('category'))
             pdf.drawString(335, y, record.get('sender'))
-            pdf.drawString(435, y, record.get('receiver'))
+            pdf.drawString(435, y, record.get('receiver') or "System")
             pdf.drawString(535, y, f"{str(record.get('amount'))} CT")
 
             y -= 20 

@@ -20,7 +20,7 @@ class DeviceToken(models.Model):
     device_token = fields.Char(required=True, string='Device Token', unique=True)
 
     @api.model
-    def send_notification(self, title, body, user):
+    def send_notification(self, title, body, user, status='info'):
         """
         Send a push notification to a specific device token.
         """
@@ -50,7 +50,8 @@ class DeviceToken(models.Model):
             self.env['res.notifications'].create({
                 'user_id': user.id,
                 'title': title,
-                'body': body
+                'body': body,
+                'status': status
             })
             return {'success': True, 'response': response}
         except Exception as e:
