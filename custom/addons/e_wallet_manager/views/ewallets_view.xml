@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List view for the res.ewallet records -->
+    <record id="view_res_ewallet_tree" model="ir.ui.view">
+        <field name="name">res.ewallet.list</field>
+        <field name="model">res.ewallet</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="user_id"/>
+                <field name="balance"/>
+                <field name="currency_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form view (read‑only) -->
+    <record id="view_res_ewallet_form" model="ir.ui.view">
+        <field name="name">res.ewallet.form</field>
+        <field name="model">res.ewallet</field>
+        <field name="arch" type="xml">
+            <form string="E‑Wallet" readonly="1">
+                <sheet>
+                    <group>
+                        <field name="user_id"/>
+                        <field name="balance"/>
+                        <field name="currency_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action to open list + form -->
+    <record id="action_res_ewallet_list" model="ir.actions.act_window">
+        <field name="name">E‑Wallets</field>
+        <field name="res_model">res.ewallet</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'readonly_by_default': True}</field>
+    </record>
+
+    <!-- Menu entry -->
+    <menuitem id="menu_ewallets_root"
+              name="E‑Wallets"
+              action="action_res_ewallet_list"
+              sequence="99"/>
+</odoo>

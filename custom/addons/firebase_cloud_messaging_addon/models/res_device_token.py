@@ -3,7 +3,7 @@ from odoo import models, fields, api
 import firebase_admin
 from firebase_admin import credentials, messaging
 from odoo import SUPERUSER_ID
-# Initialize Firebase only once
+# Initialize Firebase app
 current_dir = os.path.dirname(os.path.abspath(__file__))
 cred_path = os.path.abspath(os.path.join(current_dir, '..', 'static', 'credentials', 'firebase_key.json'))
 
@@ -61,6 +61,6 @@ class DeviceToken(models.Model):
 
     @api.model
     def addDeviceToken(self, user, token):
-        if not self.search([('user_id','=',user.id)]).device_token == token:
+        if not self.search([('user_id','=',user.id)]):
             self.create({'user_id':user.id,'device_token':token})
             return "Device token added successfully!"

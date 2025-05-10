@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List view for the res.transaction records -->
+    <record id="view_res_transactions_tree" model="ir.ui.view">
+        <field name="name">res.transactions.list</field>
+        <field name="model">res.transactions</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="user_id"/>
+                <field string="Sender" name="sender_user_name"/>
+                <field string="Receiver" name="receiver_user_name"/>
+                <field name="amount"/>
+                <field name="category"/>
+                <field name="currency_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form view (read‑only) -->
+    <record id="view_res_transactions_form" model="ir.ui.view">
+        <field name="name">res.transactions.form</field>
+        <field name="model">res.transactions</field>
+        <field name="arch" type="xml">
+            <form string="Transactions" readonly="1">
+                <sheet>
+                    <group>
+                        <field name="user_id"/>
+                        <field string="Sender" name="sender_user_name"/>
+                        <field string="Receiver" name="receiver_user_name"/>
+                        <field name="amount"/>
+                        <field name="category"/>
+                        <field name="currency_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action to open list + form -->
+    <record id="action_res_transactions_list" model="ir.actions.act_window">
+        <field name="name">Transactions</field>
+        <field name="res_model">res.transactions</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'readonly_by_default': True}</field>
+    </record>
+
+    <!-- Menu entry -->
+    <menuitem id="menu_transactions_root"
+              name="Transactions"
+              action="action_res_transactions_list"
+              sequence="99"/>
+</odoo>

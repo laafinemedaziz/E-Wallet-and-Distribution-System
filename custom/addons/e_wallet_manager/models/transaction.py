@@ -12,10 +12,12 @@ import io
 class transaction(models.Model):
     _name = 'res.transactions'
     _description = "Transactions Records"
-    #Note: the user_id field purpose is to record the user concerned with the transaction (Can be either the sender or the receiver)
+    #Note: the user_id field purpose is to record the user who made the transaction
     user_id = fields.Many2one('res.users', string='User ID', required=True)
     sender_wallet_id = fields.Many2one('res.ewallet', string='Sender Wallet')
     receiver_wallet_id = fields.Many2one('res.ewallet', string="Receiver Wallet")
+    sender_user_name = fields.Char(related='sender_wallet_id.user_id.name', store=True)
+    receiver_user_name = fields.Char(related='receiver_wallet_id.user_id.name', store=True)
     amount = fields.Monetary(string="Amount", currency_field="currency_id")
     currency_id = fields.Many2one('res.currency',
                                     string='Currency',
@@ -41,14 +43,16 @@ class transaction(models.Model):
             'amount':amount,
             'category':"transfer"
         })
-        transaction_receiver = self.create({
+
+        #For sake of clarity only one transaction is recorded and the user_id field concerns the user who made the transaction
+        """ transaction_receiver = self.create({
             'sender_wallet_id':sender_wallet.id,
             'receiver_wallet_id':receiver_wallet.id,
             'user_id':receiver_wallet.user_id.id,
             'amount':amount,
             'category':"transfer"
-        })
-        if transaction_sender and transaction_receiver:
+        }) """
+        if transaction_sender:
             self.env['firebase.device.token'].send_notification(
                 title="Transfer Recorded!",
                 body=f"Your transfer was successfully made. {amount} coins were sent to {receiver_wallet.user_id.name}.",
@@ -120,16 +124,16 @@ class transaction(models.Model):
 
     @api.model
     def getTransactions(self,user):
-        transaction_records = self.search([('user_id','=',user.id)])
+        transaction_records = self.search(['|', '|',('user_id','=',user.id),('sender_wallet_id','=',user.ewallet_id.id),('receiver_wallet_id','=',user.ewallet_id.id)])
         transactions = []
         for record in transaction_records:
             transactions.append({
                 'id':record.id,
                 'sender_wallet_id':record.sender_wallet_id.id,
-                'sender':'Self' if record.sender_wallet_id.user_id.id == record.user_id.id else "System" if not record.sender_wallet_id.user_id.id else record.sender_wallet_id.user_id.name,
+                'sender':'Self' if record.sender_wallet_id.user_id.id == user.id else "System" if not record.sender_wallet_id else record.sender_wallet_id.user_id.name,
                 'create_date':str(record.create_date),
                 'receiver_wallet_id':record.receiver_wallet_id.id,
-                'receiver':'Self' if record.receiver_wallet_id.user_id.id == record.user_id.id else "System" if not record.receiver_wallet_id.user_id.id else record.receiver_wallet_id.user_id.name,
+                'receiver':'Self' if record.receiver_wallet_id.user_id.id == user.id else "System" if not record.receiver_wallet_id else record.receiver_wallet_id.user_id.name,
                 'category':record.category,
                 'amount':record.amount
             })
