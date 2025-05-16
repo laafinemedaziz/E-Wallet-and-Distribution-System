@@ -82,7 +82,6 @@ class CoursePurchase (models.Model):
         invoice.write({
             'payment_state': 'paid',
         })
-        self.env.cr.commit()
         return invoice
 
 

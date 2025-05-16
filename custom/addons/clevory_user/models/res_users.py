@@ -250,6 +250,19 @@ class ClevoryUser (models.Model):
         }
 
 
+    @api.model
+    def changeUserInfos(self,user,newUserInfo):
+        if not user:
+            return {
+                'response':False,
+                'message':'User not authenticated.'
+            }
+        user_partner = user.partner_id
+        user_partner.write(newUserInfo)
+        return {
+            'response':True,
+            'message':"User info changed successfully."
+        }
         
     # Bypass company check because we won't need it in this model
     @api.constrains('company_id')

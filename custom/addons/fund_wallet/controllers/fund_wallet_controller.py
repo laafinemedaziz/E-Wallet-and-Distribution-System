@@ -46,7 +46,7 @@ class FundWalletController(http.Controller):
         if not user.has_group('clevory_user.hr_group_manager') and not user.has_group('clevory_user.learner_group_manager'):
             raise AccessDenied('Not allowed')
         
-        invoices = request.env['account.move'].with_user(SUPERUSER_ID).getUnpaidInvoices(user)
+        invoices = request.env['account.move'].with_user(SUPERUSER_ID).getInvoices(user)
         return (Response(json.dumps(invoices),content_type='application/json'))
     
     @http.route('/api/getInvoiceById', type='http', auth='user', method=['GET'], csrf=False)

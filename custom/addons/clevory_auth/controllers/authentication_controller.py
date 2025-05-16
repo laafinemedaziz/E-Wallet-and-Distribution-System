@@ -103,7 +103,8 @@ class authController(Session):
                 'userName':user.name,
                 'userType':user.type,
                 'userEmail':user.email,
-                'userBalance':user.ewallet_id.balance
+                'userBalance':user.ewallet_id.balance,
+                'phone':user.phone,
             }
             if user.type == "hr":
                 response["companyCode"] = user.company_ref.company_code
@@ -137,4 +138,6 @@ class authController(Session):
                 'message': f"User Logged Out successfully."
             }
         return Response(json.dumps(response),headers=headers,status=200)
+    
+    
     

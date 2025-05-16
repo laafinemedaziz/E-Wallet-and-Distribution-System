@@ -1,5 +1,5 @@
 import logging
-
+import base64
 from odoo import models, fields, api
 from odoo import SUPERUSER_ID
 from odoo.exceptions import ValidationError
@@ -15,18 +15,19 @@ _logger = logging.getLogger(__name__)
 class ClevoryProduct (models.Model):
     _inherit = 'product.template'
     price_lc = fields.Float("Price in LC")
+    category = fields.Char("Course Category") 
 
 
     @api.model
     def createNewProduct(self,product_data):
         product = self.create({
             'name': product_data.get('name'),
-            'type': 'service',          # products are services (no stock)
+            'type': 'service',          
             'description_sale': product_data.get('description'), 
             'list_price': product_data.get('price_lc'), 
             'price_lc': product_data.get('price_lc'),
+            'category': product_data.get('category'),
         })
-        # product.product_variant_id is the linked product.product variant
         return product.read(['id','name','default_code'])
     
     @api.model
@@ -44,7 +45,9 @@ class ClevoryProduct (models.Model):
                 'type':record.type,
                 'price_lc':record.price_lc,
                 'date':str(record.write_date),
-                'is_purchased':is_purchased
+                'is_purchased':is_purchased,
+                'category':record.category,
+                'image':product.image_1920.decode() if product.image_1920 else None
             })
         return products
 

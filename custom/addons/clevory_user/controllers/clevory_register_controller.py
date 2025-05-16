@@ -3,7 +3,10 @@ from odoo import http
 from odoo.http import request, Response
 from odoo.exceptions import ValidationError
 from odoo import SUPERUSER_ID
+import logging
 
+
+_logger = logging.getLogger(__name__)
 
 class RegisterControler(http.Controller):
 
@@ -90,5 +93,18 @@ class RegisterControler(http.Controller):
         
         return Response(json.dumps(company.with_user(SUPERUSER_ID).read(['name','company_code'])),content_type='application/json')
 
+    @http.route('/api/changeUserInfos', type='http', auth='user', methods=['POST'], csrf=False)
+    def changeUserInfos(self):
+        try:
+            data = request.httprequest.get_json()
+            _logger.info(f"Data received: {data}")
+            user = request.env.user
+            if not user:
+                raise ValidationError("No User Found")
+            else:
+                request.env['res.users'].with_user(SUPERUSER_ID).changeUserInfos(user,data)
+                return Response(json.dumps({'message':'User updated successfully'}),content_type='application/json')
+        except Exception as error:
+            return Response(json.dumps({'error':str(error)}), status=500, content_type='application/json')
 
         
