@@ -9,22 +9,26 @@ from odoo.exceptions import AccessDenied, UserError
 _logger = logging.getLogger(__name__)
 
 """
-* This module is responsible for managing the users of the application.
+* This modele is responsible for managing the users of the application.
 * It allows users to sign up, validate their email, and manage their accounts.
 """
 class ClevoryUser (models.Model):
     _inherit = 'res.users'
 
+    
     type = fields.Selection([
         ("hr","HR"),
         ("employee","Employee"),
         ("learner","Learner")],string="User Type")
+    #Note: User of type Admin is only created manually and not through the app
     
+    #Status is used to track email validation and therefore giving the user access to their account
     status = fields.Selection([
         ('invalid', 'Invalid'),
         ('valid', 'Valid')],
         default='invalid')
     
+    #active is used to track if the user is active or not (When user is deactivated they lose access to their account)
     active = fields.Boolean(default=False)
 
     #Wallet field
@@ -36,46 +40,21 @@ class ClevoryUser (models.Model):
     #Actually referencing the company in res.partner
     company_ref = fields.Many2one('res.partner',String="Company",domain="[('is_company', '=', True)]") 
 
-
+    #The verification token is used to validate the user by email
     verification_token = fields.Char()
 
     reset_password_token = fields.Char()
-    #Group is a computed field based on type to develop later
 
+    #Group is a computed field based on type to develop later
+#------------------------------------------------------Signup User------------------------------------------------------
     @api.model
     def sign_up_user(self,vals):
 
-        #input validation for basic required fields
-        if not vals.get('name') or not vals.get('login') or not vals.get('email') or not vals.get('password') or not vals.get('type') :
-            raise ValidationError("Missing important fields")
+        vals = self._validate_signup_vals(vals)
         
-        if vals.get('type') == 'learner':
-            if vals.get('companyCode') != "":
-                raise ValidationError("User type Learner cannot have a company. ")
-            del vals['companyCode']
+        if 'companyCode' in vals:
+            vals = self._get_company(vals)
         
-        #Validate and retrieve company from res.partner
-        company = None
-        if vals.get('type') in ["employee","hr"]:
-            if 'companyCode' in vals or 'company_ref' in vals:
-                company = self.env['res.partner'].search([("company_code",'=',vals.get('companyCode')),('is_company','=',True)],limit=1)
-                if not company: 
-                    raise ValidationError("Company not found")
-            else:
-                raise ValidationError(f"Users of type {vals.get('type')} should reference their company!")
-        else:
-            if 'company' in vals or 'company_ref' in vals:
-                raise ValidationError("Only users of type Employee or HR can reference their company.")
-
-        if company:
-            if vals.get('type') == "hr":
-                if company.hr_ref:
-                    raise ValidationError("Company already has an HR assigned.")
-            
-            vals['company_ref'] = company.id
-
-            #Deleting the companyCode key from vals as it is not a field in the res.users model
-            del vals['companyCode']
 
         token = secrets.token_urlsafe(16)
         
@@ -94,15 +73,45 @@ class ClevoryUser (models.Model):
         partner = user.partner_id
         partner._assignUserIDToPartner(user)
         
-        #Asigning the user to the company if they are of type HR
-        if user.type == 'hr':
-            company.write({'hr_ref':user.id})
 
         user._send_validation_email()
         
         
         return(user.with_user(SUPERUSER_ID).read(['login']))
     
+    @api.model
+    def _validate_signup_vals(self,vals):
+        #input validation for basic required fields
+        if not vals.get('name') or not vals.get('login') or not vals.get('email') or not vals.get('password') or not vals.get('type') :
+            raise ValidationError("Missing important fields")
+        
+        if vals.get('type') not in ['hr','employee','learner']:
+            raise ValidationError("Invalid user type")
+
+        if vals.get('type') == 'learner':
+            if vals.get('companyCode') != "":
+                raise ValidationError("User type Learner cannot have a company.")
+            del vals['companyCode']
+
+        return vals
+
+    @api.model
+    def _get_company(self,vals):
+        company = self.env['res.partner'].search([("company_code",'=',vals.get('companyCode')),('is_company','=',True)],limit=1)
+
+        if not company:
+            raise ValidationError('No company with given code was not found, Verify company code and try again.')
+        
+        if vals.get('type') == 'hr' and company.hr_ref:
+            raise ValidationError("Company already has an HR assigned.")
+        
+        vals['company_ref'] = company.id
+        #CompanyCode is not needed in the user vals as it is not a field in res.users
+        del vals['companyCode']
+
+        return vals
+
+
     def _send_validation_email(self):
 
         if not self.exists() :
@@ -151,7 +160,12 @@ class ClevoryUser (models.Model):
         if not user :
             raise ValidationError("Error: No user was found!")
         else :
-            user.with_user(SUPERUSER_ID).write({
+            if user.type == "hr":
+                company = user.company_ref
+                company.write({
+                    'hr_ref':user.id
+                })
+            user.write({
             "status": "valid", 
             "active":True, 
             "verification_token": "False"  
@@ -264,6 +278,71 @@ class ClevoryUser (models.Model):
             'message':"User info changed successfully."
         }
         
+    @api.model
+    def getAllUsers(self):
+        users_records = self.with_context(active_test=False).search([('type', 'in', ['hr', 'employee', 'learner'])])
+        _logger.info(f"Users found: {users_records}")
+        users_data = []
+        for user in users_records:
+            users_data.append({
+                'id': user.id,
+                'name': user.name,
+                'login': user.login,
+                'email': user.email,
+                'type': user.type,
+                'status': user.status,
+                'active': user.active,
+                'company_ref': user.company_ref.id if user.company_ref else None,
+                'create_date': str(user.create_date) if user.create_date else '',
+                'write_date': str(user.write_date) if user.write_date else '',
+                'balance': user.ewallet_id.balance if user.ewallet_id else 0,
+                'active': user.active,
+            })
+        return users_data
+
+
+    
+    @api.model
+    def activateDeactivateUser(self,user_id):
+        user = self.with_context(active_test=False).search([('id','=',user_id)])
+        _logger.info(f"User found: {user}")
+        if not user:
+            return {
+                'response':False,
+                'message':'User not authenticated.'
+            }
+        user.write({
+            'active': not user.active
+        })
+        _logger.info(f"User {user.name} has been {'activated' if user.active else 'deactivated'}.")
+        return {
+            'response':True,
+            'message':f"User {user.name} has been {'activated' if user.active else 'deactivated'}."
+        }
+    
+    @api.model
+    def deleteUser(self,user_id):
+        user = self.with_context(active_test=False).search([('id','=',user_id)])
+        if not user:
+            return {
+                'response':False,
+                'message':'User not authenticated.'
+            }
+        
+        try:
+            user.unlink()
+        except Exception as e:
+            _logger.error(f"Failed to delete user {user.name}: {e}", exc_info=True)
+
+        _logger.info(f"User {user.name} has been deleted.")
+        return {
+            'response':True,
+            'message':f"User {user.name} has been deleted."
+        }
+
+
+
+    #------------------------------------------------------Constraints------------------------------------------------------
     # Bypass company check because we won't need it in this model
     @api.constrains('company_id')
     def _check_company(self):

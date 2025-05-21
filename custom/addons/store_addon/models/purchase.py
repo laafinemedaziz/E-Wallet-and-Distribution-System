@@ -17,7 +17,7 @@ class CoursePurchase (models.Model):
     _description = "Course Purchase Records"    
 
 
-    user_id = fields.Many2one('res.users', string='User ID', required=True)
+    user_id = fields.Many2one('res.users', string='User ID', required=True, ondelete='cascade')
     product_id = fields.Many2one('product.product', string='Course', required=True)
     purchase_date = fields.Datetime(string='Purchase Date', default=fields.Datetime.now)
     invoice_id = fields.Many2one('account.move', string='Invoice')
