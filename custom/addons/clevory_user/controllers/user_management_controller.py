@@ -28,16 +28,6 @@ class RegisterControler(http.Controller):
         except Exception as error:
             return Response(json.dumps({'error':str(error)}), status=500, content_type='application/json')
 
-
-
-
-    #This endpoint would only be available for the admin (to develop later with other company CRUD operations)
-    @http.route('/api/add_company', type='http',auth='none', methods=['POST'], csrf=False, cors='*')
-    def add_company(self):
-        data = json.loads(request.httprequest.data)
-        print(data)
-        company = request.env['res.partner'].sudo().add_new_company(data)
-        return Response(json.dumps(company),content_type='application/json')
     
     @http.route('/api/confirm_user', type='http', auth='none', methods=['GET'], csrf=False, cors='*')
     def verify_user(self):

@@ -145,5 +145,3 @@ class CoursePurchase (models.Model):
     @api.model
     def getUserPurchases(self, user_id):
         return self.search([('user_id','=',user_id)]).read()
-
-

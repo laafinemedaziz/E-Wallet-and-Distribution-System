@@ -18,11 +18,20 @@ class Partner(models.Model):
         if not vals.get('name') or not vals.get('email') :
             raise ValidationError("Missing important fields")
         
+        if self.search(['|',('email', '=', vals.get('email')),('name', '=', vals.get('name'))]):
+            raise ValidationError("Company with this name or/and email already exists. Contact support if you think this is an error.")
+        
         vals['is_company'] =  True
 
         company = self.env['res.partner'].with_user(SUPERUSER_ID).create(vals)
         company.assign_company_code()
-        return company.with_user(SUPERUSER_ID).read(['id','name','company_code'])
+        return {
+            'id': company.id,
+            'name': company.name,
+            'email': company.email,
+            'company_code': company.company_code,
+            'create_date': str(company.create_date),
+        }
     
     def assign_company_code(self):
         code = secrets.token_urlsafe(5)
@@ -36,4 +45,15 @@ class Partner(models.Model):
         self.with_user(SUPERUSER_ID).write({
             'user_id':user.id,
         })
+
+    @api.model
+    def getAllCompanies(self):
+        companies = self.search([('is_company', '=', True)])
+        return [{
+            'id': company.id,
+            'name': company.name,
+            'email': company.email,
+            'company_code': company.company_code,
+            'create_date': str(company.create_date),
+        } for company in companies]
         

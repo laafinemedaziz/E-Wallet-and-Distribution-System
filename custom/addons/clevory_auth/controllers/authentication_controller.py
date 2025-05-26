@@ -62,7 +62,8 @@ class authController(Session):
             response = {
                 'message': f"User {login} authenticated successfully.",
                 'user_id': session_infos.get('uid'),
-                'name': session_infos.get('name')
+                'name': session_infos.get('name'),
+                'status': 'Active' if user.active else 'Inactive'
             }
             return response
 
