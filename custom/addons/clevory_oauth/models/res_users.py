@@ -55,7 +55,8 @@ class ResUsers(models.Model):
         if response.status_code != 200:
             raise AccessDenied("There was a problem retrieving your data from the OAuth provider.")
         else: 
-            db, login, access_token = self.with_user(SUPERUSER_ID).auth_oauth(3,resData)
+            googleOauth = self.env['auth.oauth.provider'].search([('name', '=', 'Google OAuth2')], limit=1)
+            db, login, access_token = self.with_user(SUPERUSER_ID).auth_oauth(googleOauth.id,resData)
             credentials = {'login':login, 'token':access_token, 'type':'oauth_token'}
             if not login or not access_token or not db:
                 raise AccessDenied("There was a problem authenticated you in.")

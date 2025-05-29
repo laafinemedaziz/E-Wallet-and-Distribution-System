@@ -65,6 +65,7 @@ class PaypalPay (models.Model):
         }
         DATA = '{}'
         response = requests.post(URL,headers=HEADERS,data=DATA)
+        _logger.info(f"Capture Payment Response: {response.json()}")
         payment_data = response.json()
         if payment_data.get('status') != "COMPLETED":
             raise ValidationError('ERROR: Payment is not completed')
@@ -139,8 +140,9 @@ class PaypalPay (models.Model):
         payment_date = paymentData.get('purchase_units')[0].get('payments').get('captures')[0].get('create_time')
         amount_paid = paymentData.get('purchase_units')[0].get('payments').get('captures')[0].get('amount').get('value') 
         Currency = self.env.ref('base.TND')
+        journal = self.env['account.journal'].search([('type', '=', 'bank')], limit=1)
         payment_record = self.create({
-            'journal_id':13,
+            'journal_id': journal.id,
             'payment_method_id':1,
             'amount':amount_paid,
             'partner_id':invoice.partner_id.id,
