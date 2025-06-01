@@ -58,12 +58,13 @@ class authController(Session):
 
             # Calling the Odoo's authentication method with the right parameters
             session_infos = super().authenticate(db, login, password)
-
+            _logger.info(session_infos)
             response = {
                 'message': f"User {login} authenticated successfully.",
                 'user_id': session_infos.get('uid'),
                 'name': session_infos.get('name'),
-                'status': 'Active' if user.active else 'Inactive'
+                'status': 'Active' if user.active else 'Inactive',
+                'type': user.type
             }
             return response
 

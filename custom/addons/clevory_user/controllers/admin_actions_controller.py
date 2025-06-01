@@ -35,8 +35,7 @@ class adminActionsController(http.Controller):
         
     
     @http.route('/api/AdminActions', type='http', auth='user', methods=['POST'], csrf=False, cors='*')
-    def adminActions(self):
-        
+    def adminActions(self):  
         try:
             user = request.env.user
             if not user.type == 'admin':

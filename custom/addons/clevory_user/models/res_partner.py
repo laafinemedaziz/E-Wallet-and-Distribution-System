@@ -48,7 +48,7 @@ class Partner(models.Model):
 
     @api.model
     def getAllCompanies(self):
-        companies = self.search([('is_company', '=', True)])
+        companies = self.search([('is_company', '=', True),('company_code', '!=', False)])
         return [{
             'id': company.id,
             'name': company.name,
