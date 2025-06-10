@@ -34,12 +34,86 @@ class RegisterControler(http.Controller):
         try:
             token = request.params.get('token')
             if not token:
-                raise ValidationError("No Valid Token Found")
-            else:
-                response = request.env['res.users'].with_user(SUPERUSER_ID)._validate_user(token)
-                return Response(json.dumps(response),content_type='application/json') 
+                raise ValidationError("No valid token found")
+
+            # Validate token - result can be used in HTML
+            response = request.env['res.users'].with_user(SUPERUSER_ID)._validate_user(token)
+        
+            # HTML success response
+            html_success = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Account Confirmed</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        text-align: center; 
+                        padding: 50px; 
+                        background-color: #f8f9fa;
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 0 auto;
+                    }
+                    .success-icon {
+                        color: #28a745;
+                        font-size: 72px;
+                    }
+                    h1 {
+                        color: #28a745;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="success-icon">Validated!</div>
+                    <h1>Account Confirmed!</h1>
+                    <p>Your email address has been successfully verified.</p>
+                    <p>You can now close this window and use your account.</p>
+                </div>
+            </body>
+            </html>
+            """
+            return Response(html_success, content_type='text/html')
+
         except Exception as error:
-            return Response(json.dumps({'error':str(error)}), status=500, content_type='application/json')
+            # HTML error response
+            html_error = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Verification Error</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        text-align: center; 
+                        padding: 50px; 
+                        background-color: #f8f9fa;
+                    }
+                    .container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                    }}
+                    .error-icon {{
+                        color: #dc3545;
+                        font-size: 72px;
+                    }}
+                    h1 {{
+                        color: #dc3545;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="error-icon">Error!</div>
+                    <h1>Verification Failed</h1>
+                    <p>Please contact support for assistance.</p>
+                </div>
+            </body>
+            </html>
+            """
+            return Response(html_error, status=500, content_type='text/html')
         
     @http.route('/api/request_passwordReset', type='http', auth='none', methods=['POST'], csrf=False, cors='*')
     def requestPasswordReset(self):
